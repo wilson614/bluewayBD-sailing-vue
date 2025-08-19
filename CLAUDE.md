@@ -22,6 +22,7 @@ npm run preview
 ## 系統架構
 
 ### 技術堆疊
+
 - **Vue.js 3** 使用 Composition API
 - **Tailwind CSS** 樣式框架，具備客製化 16:9 響應式設計
 - **Vite** 建置工具
@@ -31,6 +32,7 @@ npm run preview
 ### 主要組件架構
 
 應用程式為單頁 Vue 組件 (`src/App.vue`)，包含三個主要區塊：
+
 1. **頁首**：標題和即時時鐘
 2. **主要內容**：船班時刻表（左側 2/3）+ 天氣資訊側邊欄（右側 1/3）
 3. **頁尾**：狀態訊息和導航資訊
@@ -38,6 +40,7 @@ npm run preview
 ### 背景效果實作
 
 VANTA.js 使用 script 標籤載入於 `index.html` 而非 ES6 匯入：
+
 - Three.js：`/src/JS/three.r134.min.js`
 - VANTA.js：`/src/JS/vanta.waves.min.js`
 - 透過全域 `window.THREE` 和 `window.VANTA` 物件存取
@@ -52,11 +55,13 @@ VANTA.js 使用 script 標籤載入於 `index.html` 而非 ES6 匯入：
 ### 資料管理
 
 船班時刻表資料由 `schedules` ref 陣列管理，包含以下屬性：
+
 - 班次資訊：`departure`、`arrival`、`shipName`、`pier`
 - 天氣資料：`windLevel`、`waveHeight`、`visibility`
 - 狀態指標：`comfort`（搖晃程度）、`status`（開航狀態）
 
 動態 CSS 類別透過計算方法套用：
+
 - `getRowClass()`：根據舒適度等級設定列背景色彩
 - `getComfortClass()`：舒適度指標樣式
 - `getStatusClass()`：營運狀態樣式
@@ -64,8 +69,9 @@ VANTA.js 使用 script 標籤載入於 `index.html` 而非 ES6 匯入：
 ### 客製化字體配置
 
 Tailwind 已配置繁體中文字體：
-- 主要字體：Microsoft JhengHei
-- 備用字體：PingFang TC、Noto Sans TC
+
+- 主要字體：Noto Sans TC
+- 備用字體：PingFang TC、Microsoft JhengHei
 
 ## 重要注意事項
 

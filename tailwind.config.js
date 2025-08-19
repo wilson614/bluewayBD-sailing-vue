@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        'sans': ['Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', 'sans-serif'],
+        'sans': ['Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', 'sans-serif'],
       },
       aspectRatio: {
         '16/9': '16 / 9',
