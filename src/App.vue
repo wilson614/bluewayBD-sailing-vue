@@ -15,51 +15,75 @@
       </header>
 
       <main class="flex-1 grid grid-cols-3 gap-8 px-8 min-h-0 main-content">
-        <!-- 船班時刻表 -->
-        <section class="col-span-2 ferry-schedule">
-          <div class="schedule-header">
-            <div>預定出發</div>
-            <div>船名</div>
-            <div>碼頭</div>
-            <div>預定抵達</div>
-            <div>海氣象預報</div>
-            <div>航行舒適度</div>
-            <div>開航狀態</div>
+        <!-- 左側區塊：船班時刻表 + 3D 模型 + Footer -->
+        <section class="col-span-2 flex flex-col gap-4">
+          <!-- 船班時刻表 -->
+          <div class="flex-1 ferry-schedule">
+            <div class="schedule-header">
+              <div>預定出發</div>
+              <div>船名</div>
+              <div>碼頭</div>
+              <div>預定抵達</div>
+              <div>海氣象預報</div>
+              <div>航行舒適度</div>
+              <div>開航狀態</div>
+            </div>
+
+            <div class="flex flex-col gap-[1vh]">
+              <div
+                v-for="schedule in schedules"
+                :key="schedule.id"
+                class="ferry-row"
+                :class="getRowClass(schedule.comfort)"
+              >
+                <div class="time-slot">{{ schedule.departure }}</div>
+                <div>{{ schedule.shipName }}</div>
+                <div>{{ schedule.pier }}</div>
+                <div class="time-slot">{{ schedule.arrival }}</div>
+                <div>
+                  <div>
+                    風力{{ schedule.windLevel }}級 浪高{{ schedule.waveHeight }}
+                  </div>
+                  <div class="weather-detail">
+                    能見度{{ schedule.visibility }}
+                  </div>
+                </div>
+                <div
+                  class="comfort-level"
+                  :class="getComfortClass(schedule.comfort)"
+                >
+                  {{ schedule.comfort }}
+                </div>
+                <div
+                  class="status"
+                  :class="[
+                    getStatusClass(schedule.status),
+                    { urgent: schedule.status === '可能停航' },
+                  ]"
+                >
+                  {{ schedule.status }}
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div class="flex flex-col gap-[1vh]">
-            <div
-              v-for="schedule in schedules"
-              :key="schedule.id"
-              class="ferry-row"
-              :class="getRowClass(schedule.comfort)"
-            >
-              <div class="time-slot">{{ schedule.departure }}</div>
-              <div>{{ schedule.shipName }}</div>
-              <div>{{ schedule.pier }}</div>
-              <div class="time-slot">{{ schedule.arrival }}</div>
-              <div>
-                <div>
-                  風力{{ schedule.windLevel }}級 浪高{{ schedule.waveHeight }}
-                </div>
-                <div class="weather-detail">
-                  能見度{{ schedule.visibility }}
-                </div>
+          <!-- 底部區塊：3D 模型 + Footer -->
+          <div class="grid grid-cols-2 gap-4 h-64">
+            <!-- 3D 船舶模型 -->
+            <div class="weather-card ship-model-card">
+              <div class="weather-title">
+                <i class="fas fa-ship"></i> 航行船舶
               </div>
-              <div
-                class="comfort-level"
-                :class="getComfortClass(schedule.comfort)"
-              >
-                {{ schedule.comfort }}
+              <div ref="shipModelRef" class="ship-model-container"></div>
+            </div>
+
+            <!-- Footer 資訊 -->
+            <div class="weather-card footer-info">
+              <div class="weather-title">
+                <i class="fas fa-info-circle"></i> 重要提醒
               </div>
-              <div
-                class="status"
-                :class="[
-                  getStatusClass(schedule.status),
-                  { urgent: schedule.status === '可能停航' },
-                ]"
-              >
-                {{ schedule.status }}
+              <div class="footer-text text-center">
+                請隨時注意現場廣播與看板<br />風級7級已達管制標準
               </div>
             </div>
           </div>
@@ -120,18 +144,6 @@
           </div>
         </aside>
       </main>
-
-      <footer class="text-center px-[3vw] py-[2vh] min-h-[8vh] footer">
-        <div class="footer-text">
-          請隨時注意現場廣播與看板 | 風級7級已達管制標準
-        </div>
-      </footer>
-
-      <div
-        class="absolute bottom-[2vh] left-[3vw] text-6xl z-10 text-blue-300 mascot"
-      >
-        <i class="fas fa-ship"></i>
-      </div>
     </div>
   </div>
 </template>
@@ -144,7 +156,10 @@ export default {
   setup() {
     const currentTime = ref("");
     const vantaRef = ref(null);
+    const shipModelRef = ref(null);
     let vantaEffect = null;
+    let shipScene = null;
+    let shipRenderer = null;
 
     const schedules = ref([
       {
@@ -185,7 +200,6 @@ export default {
       },
     ]);
 
-
     const updateTime = () => {
       const now = new Date();
       const hours = now.getHours().toString().padStart(2, "0");
@@ -223,6 +237,272 @@ export default {
       return status === "可能停航" ? "status-suspended" : "status-operating";
     };
 
+    // 3D 模型設置函式
+    const initShipModel = () => {
+      console.log("初始化 3D 模型...");
+
+      if (!window.THREE) {
+        console.error("THREE.js 未載入");
+        return;
+      }
+
+      if (!window.THREE.FBXLoader) {
+        console.error("FBXLoader 未載入");
+        return;
+      }
+
+      if (!shipModelRef.value) {
+        console.error("shipModelRef 不存在");
+        return;
+      }
+
+      console.log(
+        "容器尺寸:",
+        shipModelRef.value.clientWidth,
+        "x",
+        shipModelRef.value.clientHeight
+      );
+
+      // 創建場景
+      shipScene = new window.THREE.Scene();
+      // 不設定背景色，保持透明
+
+      // 創建相機
+      const camera = new window.THREE.PerspectiveCamera(
+        60, // 減小視野角度讓模型看起來更大
+        shipModelRef.value.clientWidth / shipModelRef.value.clientHeight,
+        0.1,
+        1000
+      );
+      camera.position.set(2, 1.25, 2); // 拉近相機距離
+      camera.lookAt(0, 0, 0);
+
+      // 創建渲染器
+      shipRenderer = new window.THREE.WebGLRenderer({
+        alpha: true,
+        antialias: true,
+      });
+      shipRenderer.setSize(
+        shipModelRef.value.clientWidth,
+        shipModelRef.value.clientHeight
+      );
+      shipRenderer.setClearColor(0x000000, 0); // 完全透明背景
+      shipRenderer.shadowMap.enabled = true;
+      shipRenderer.shadowMap.type = window.THREE.PCFSoftShadowMap;
+      shipModelRef.value.appendChild(shipRenderer.domElement);
+
+      // 添加多個燈光來增加亮度
+      const ambientLight = new window.THREE.AmbientLight(0xffffff, 1.2); // 增加環境光
+      shipScene.add(ambientLight);
+
+      const directionalLight = new window.THREE.DirectionalLight(0xffffff, 1.5); // 增加方向光
+      directionalLight.position.set(10, 10, 5);
+      directionalLight.castShadow = true;
+      directionalLight.shadow.mapSize.width = 2048;
+      directionalLight.shadow.mapSize.height = 2048;
+      shipScene.add(directionalLight);
+
+      // 添加多個點光源來增加亮度
+      const pointLight1 = new window.THREE.PointLight(0xffffff, 0.8, 100);
+      pointLight1.position.set(5, 5, 5);
+      shipScene.add(pointLight1);
+
+      const pointLight2 = new window.THREE.PointLight(0xffffff, 0.6, 100);
+      pointLight2.position.set(-5, 5, 5);
+      shipScene.add(pointLight2);
+
+      const pointLight3 = new window.THREE.PointLight(0xffffff, 0.4, 100);
+      pointLight3.position.set(0, -3, 5);
+      shipScene.add(pointLight3);
+
+      // 先添加一個測試立方體來確認場景正常
+      const geometry = new window.THREE.BoxGeometry(0.8, 0.8, 0.8);
+      const material = new window.THREE.MeshPhongMaterial({
+        color: 0x00ff88,
+        transparent: false,
+        opacity: 1.0,
+        shininess: 100,
+      });
+      const testCube = new window.THREE.Mesh(geometry, material);
+      testCube.position.set(0, 0, 0);
+      testCube.castShadow = true;
+      testCube.receiveShadow = true;
+      shipScene.add(testCube);
+
+      // 渲染循環（先顯示測試立方體）
+      const animate = () => {
+        requestAnimationFrame(animate);
+        testCube.rotation.x += 0.01;
+        testCube.rotation.y += 0.01;
+        shipRenderer.render(shipScene, camera);
+      };
+      animate();
+
+      // 等待一秒後嘗試載入模型，確保 DOM 元素完全準備好
+      setTimeout(() => {
+        // 嘗試載入 GLB 模型（應該比較穩定）
+        const gltfLoader = new window.THREE.GLTFLoader();
+        console.log("開始載入 GLB 檔案...", "./src/images/porta.glb");
+        console.log(
+          "容器已準備好:",
+          shipModelRef.value.clientWidth,
+          "x",
+          shipModelRef.value.clientHeight
+        );
+
+        gltfLoader.load(
+          "./src/images/porta.glb",
+          (gltf) => {
+            console.log("GLB 載入成功!", gltf);
+            console.log("場景內容:", gltf.scene);
+            console.log("場景子物件數量:", gltf.scene.children.length);
+
+            // 移除測試立方體
+            shipScene.remove(testCube);
+
+            const model = gltf.scene;
+
+            // 確保模型有內容
+            if (model.children.length === 0) {
+              console.warn("GLB 模型為空，沒有子物件");
+              return;
+            }
+
+            // 遍歷所有子物件並設置材質
+            model.traverse((child) => {
+              if (child.isMesh) {
+                console.log(
+                  "找到 Mesh:",
+                  child.name,
+                  child.geometry,
+                  child.material
+                );
+                child.castShadow = true;
+                child.receiveShadow = true;
+                if (child.material) {
+                  // 確保材質可見並增加亮度
+                  child.material.transparent = false;
+                  child.material.opacity = 1.0;
+
+                  // 如果是標準材質，增加發光效果
+                  if (child.material.emissive) {
+                    child.material.emissive.setHex(0x111111); // 輕微發光
+                  }
+                  if (child.material.emissiveIntensity !== undefined) {
+                    child.material.emissiveIntensity = 0.2;
+                  }
+
+                  // 增加材質亮度
+                  if (child.material.color) {
+                    child.material.color.multiplyScalar(1.1); // 增加亮度
+                  }
+                }
+              }
+            });
+
+            // 計算模型的邊界框來自動調整縮放
+            const box = new window.THREE.Box3().setFromObject(model);
+            const size = box.getSize(new window.THREE.Vector3());
+            console.log("模型尺寸:", size.x, size.y, size.z);
+
+            if (size.x === 0 || size.y === 0 || size.z === 0) {
+              console.warn("模型尺寸為零，可能載入有問題");
+              return;
+            }
+
+            // 根據模型尺寸自動調整縮放，讓模型佔滿區塊
+            const maxSize = Math.max(size.x, size.y, size.z);
+            const scale = 2.8 / maxSize; // 增大縮放比例，讓模型佔滿區塊
+            console.log("計算的縮放比例:", scale);
+            model.scale.set(scale, scale, scale);
+
+            // 將模型置中
+            const center = box.getCenter(new window.THREE.Vector3());
+            model.position.sub(center.multiplyScalar(scale));
+            console.log("模型位置:", model.position);
+
+            shipScene.add(model);
+            console.log(
+              "GLB 模型已添加到場景，場景物件數量:",
+              shipScene.children.length
+            );
+
+            // 更新渲染循環以旋轉模型
+            const animateModel = () => {
+              requestAnimationFrame(animateModel);
+              model.rotation.y += 0.005; // 較慢的旋轉速度
+              shipRenderer.render(shipScene, camera);
+            };
+            animateModel();
+          },
+          (progress) => {
+            if (progress.total > 0) {
+              const percent = (
+                (progress.loaded / progress.total) *
+                100
+              ).toFixed(2);
+              console.log("GLB 載入進度:", percent + "%");
+            }
+          },
+          (error) => {
+            console.error("載入 GLB 模型時發生錯誤:", error);
+            console.log("GLB 載入失敗，嘗試 FBX...");
+
+            // 如果 GLB 失敗，回退到 FBX
+            const fbxLoader = new window.THREE.FBXLoader();
+            fbxLoader.load(
+              "./src/images/porta.fbx",
+              (object) => {
+                console.log("FBX 載入成功!", object);
+
+                // 移除測試立方體
+                shipScene.remove(testCube);
+
+                // 計算模型的邊界框來自動調整縮放
+                const box = new window.THREE.Box3().setFromObject(object);
+                const size = box.getSize(new window.THREE.Vector3());
+                console.log("FBX 模型尺寸:", size);
+
+                // 根據模型尺寸自動調整縮放，讓模型佔滿區塊
+                const maxSize = Math.max(size.x, size.y, size.z);
+                const scale = 4 / maxSize; // 增大縮放比例
+                object.scale.set(scale, scale, scale);
+
+                // 將模型置中
+                const center = box.getCenter(new window.THREE.Vector3());
+                object.position.sub(center.multiplyScalar(scale));
+
+                shipScene.add(object);
+                console.log("FBX 模型已添加到場景");
+
+                // 更新渲染循環以旋轉模型
+                const animateModel = () => {
+                  requestAnimationFrame(animateModel);
+                  object.rotation.y += 0.005;
+                  shipRenderer.render(shipScene, camera);
+                };
+                animateModel();
+              },
+              (progress) => {
+                if (progress.total > 0) {
+                  const percent = (
+                    (progress.loaded / progress.total) *
+                    100
+                  ).toFixed(2);
+                  console.log("FBX 載入進度:", percent + "%");
+                }
+              },
+              (fbxError) => {
+                console.error("載入 FBX 模型也失敗:", fbxError);
+                console.log("繼續顯示測試立方體");
+              }
+            );
+          },
+          1000
+        ); // 延遲 1 秒載入模型
+      });
+    };
+
     let timeInterval;
 
     onMounted(() => {
@@ -237,12 +517,17 @@ export default {
           mouseControls: true,
           touchControls: true,
           gyroControls: false,
-          minHeight: 200.00,
-          minWidth: 200.00,
-          scale: 1.00,
-          scaleMobile: 1.00
+          minHeight: 200.0,
+          minWidth: 200.0,
+          scale: 1.0,
+          scaleMobile: 1.0,
         });
       }
+
+      // 初始化 3D 船舶模型
+      setTimeout(() => {
+        initShipModel();
+      }, 100);
 
       // 添加緊急狀態閃爍效果
       setInterval(() => {
@@ -260,12 +545,17 @@ export default {
       if (vantaEffect) {
         vantaEffect.destroy();
       }
+      if (shipRenderer && shipModelRef.value) {
+        shipModelRef.value.removeChild(shipRenderer.domElement);
+        shipRenderer.dispose();
+      }
     });
 
     return {
       currentTime,
       schedules,
       vantaRef,
+      shipModelRef,
       getRowClass,
       getComfortClass,
       getStatusClass,
@@ -651,5 +941,34 @@ body {
 
 .urgent {
   animation: pulse 2s infinite;
+}
+
+/* 3D 船舶模型樣式 */
+.ship-model-container {
+  width: 100%;
+  height: 180px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: transparent; /* 完全透明背景 */
+}
+
+.ship-model-card {
+  min-height: 240px;
+}
+
+/* Footer 資訊卡片樣式 */
+.footer-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  min-height: 240px;
+}
+
+.footer-info .footer-text {
+  font-size: 1.2rem;
+  color: #ffeb3b;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
+  line-height: 1.5;
 }
 </style>
