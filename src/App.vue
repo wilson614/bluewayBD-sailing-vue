@@ -8,15 +8,15 @@
       class="w-full h-full flex flex-col relative text-white overflow-hidden bg-transparent gap-[2vh] main-container"
     >
       <header
-        class="flex justify-between items-center px-[3vw] py-[2vh] min-h-[12vh] header"
+        class="flex justify-between items-center py-4 px-8 min-h-[12vh] header"
       >
         <h1>布袋港 藍色公路氣象台</h1>
         <div class="time">{{ currentTime }}</div>
       </header>
 
-      <main class="flex-1 grid grid-cols-3 gap-8 px-8 min-h-0 main-content">
+      <main class="flex-1 grid grid-cols-3 gap-8 px-6 min-h-0 main-content">
         <!-- 左側區塊：船班時刻表 + 3D 模型 + Footer -->
-        <section class="col-span-2 flex flex-col gap-4">
+        <section class="col-span-2 flex flex-col gap-8">
           <!-- 船班時刻表 -->
           <div class="flex-1 ferry-schedule">
             <div class="schedule-header">
@@ -68,22 +68,18 @@
           </div>
 
           <!-- 底部區塊：3D 模型 + Footer -->
-          <div class="grid grid-cols-2 gap-4 h-64">
-            <!-- 3D 船舶模型 -->
-            <div class="weather-card ship-model-card">
-              <div class="weather-title">
-                <i class="fas fa-ship"></i> 航行船舶
-              </div>
-              <div ref="shipModelRef" class="ship-model-container"></div>
-            </div>
-
+          <div class="flex flex-col gap-8">
             <!-- Footer 資訊 -->
-            <div class="weather-card footer-info">
-              <div class="weather-title">
-                <i class="fas fa-info-circle"></i> 重要提醒
-              </div>
-              <div class="footer-text text-center">
-                請隨時注意現場廣播與看板<br />風級7級已達管制標準
+            <div class="weather-card ship-model-card">
+              <div class="flex gap-4">
+                <!-- 3D 船舶模型 -->
+                <div
+                  ref="shipModelRef"
+                  class="ship-model-container w-1/8 h-full"
+                ></div>
+                <div class="footer-text text-center w-7/8">
+                  請隨時注意現場廣播與看板<br />風級7級已達管制標準
+                </div>
               </div>
             </div>
           </div>
@@ -93,39 +89,72 @@
         <aside class="flex flex-col gap-8 overflow-y-auto weather-info">
           <!-- 馬公天氣 -->
           <div class="weather-card">
-            <div class="weather-title">
-              <i class="fas fa-thermometer-half"></i> 馬公天氣
+            <div class="weather-title flex items-center gap-2">
+              <i class="fas fa-cloud fa-fw fa-lg"></i>
+              <h3 class="inline-block">馬公天氣</h3>
             </div>
-            <div class="weather-item">
-              <span><i class="fas fa-cloud-rain weather-icon"></i> 溫度</span>
-              <span>26~28°C</span>
+            <div class="weather-item flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <i class="fas fa-temperature-low fa-fw"></i>
+                <h5 class="inline-block">溫度</h5>
+              </div>
+              <div><span>26~28</span><span class="text-xl ms-4">°C</span></div>
             </div>
-            <div class="weather-item">
-              <span><i class="fas fa-tint weather-icon"></i> 降雨機率</span>
-              <span>80%</span>
+            <div class="weather-item flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <i class="fas fa-tint weather-icon fa-fw"></i>
+                <h5 class="inline-block">降雨機率</h5>
+              </div>
+              <div><span>80</span><span class="text-xl ms-4">%</span></div>
             </div>
-            <div class="weather-item">
-              <span><i class="fas fa-eye weather-icon"></i> 能見度</span>
-              <span>1-5KM</span>
+            <div class="weather-item flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <i class="fas fa-eye weather-icon fa-fw"></i>
+                <h5 class="inline-block">能見度</h5>
+              </div>
+              <div><span>1-5</span><span class="text-xl ms-4">km</span></div>
             </div>
           </div>
 
-          <!-- 貼心提醒 -->
+          <!-- 貼心提醒輪播 -->
           <div class="weather-card alerts">
-            <div class="weather-title">
-              <i class="fas fa-exclamation-triangle"></i> 貼心提醒
+            <div class="weather-title flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-exclamation-triangle fa-fw fa-lg"></i>
+                <h3 class="inline-block">貼心提醒</h3>
+              </div>
+              <div class="carousel-indicators">
+                <div
+                  v-for="(alert, index) in alerts"
+                  :key="alert.id"
+                  class="indicator"
+                  :class="{ active: currentAlertIndex === index }"
+                ></div>
+              </div>
             </div>
-            <div class="alert-item">
-              <i class="fas fa-clock alert-icon"></i>
-              <span>抵達時間受海氣象因素延遲</span>
-            </div>
-            <div class="alert-item">
-              <i class="fas fa-cloud-rain alert-icon"></i>
-              <span>下雨機率80% 小心甲板濕滑</span>
-            </div>
-            <div class="alert-item">
-              <i class="fas fa-pills alert-icon"></i>
-              <span>因風浪搖晃建議準備暈船藥</span>
+            <div class="alert-carousel">
+              <div class="alert-slide" :class="{ 'slide-active': true }">
+                <div class="alert-item">
+                  <i
+                    :class="alerts[currentAlertIndex].icon + ' alert-icon'"
+                  ></i>
+                  <span>{{ alerts[currentAlertIndex].message }}</span>
+                </div>
+                <div
+                  class="alert-item"
+                  v-if="alerts[(currentAlertIndex + 1) % alerts.length]"
+                >
+                  <i
+                    :class="
+                      alerts[(currentAlertIndex + 1) % alerts.length].icon +
+                      ' alert-icon'
+                    "
+                  ></i>
+                  <span>{{
+                    alerts[(currentAlertIndex + 1) % alerts.length].message
+                  }}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -199,6 +228,38 @@ export default {
         status: "開航",
       },
     ]);
+
+    // 貼心提醒輪播數據
+    const alerts = ref([
+      {
+        id: 1,
+        icon: "fas fa-clock",
+        message: "抵達時間受海氣象因素延遲",
+      },
+      {
+        id: 2,
+        icon: "fas fa-cloud-rain",
+        message: "下雨機率80% 小心甲板濕滑",
+      },
+      {
+        id: 3,
+        icon: "fas fa-pills",
+        message: "因風浪搖晃建議準備暈船藥",
+      },
+      {
+        id: 4,
+        icon: "fas fa-life-ring",
+        message: "請確實穿著救生衣保持安全",
+      },
+      {
+        id: 5,
+        icon: "fas fa-mobile-alt",
+        message: "船上提供免費 WiFi 供旅客使用",
+      },
+    ]);
+
+    // 輪播狀態
+    const currentAlertIndex = ref(0);
 
     const updateTime = () => {
       const now = new Date();
@@ -608,7 +669,14 @@ export default {
       }
     };
 
+    // 輪播自動切換功能（每次跳兩個項目）
+    const nextAlert = () => {
+      currentAlertIndex.value =
+        (currentAlertIndex.value + 2) % alerts.value.length;
+    };
+
     let timeInterval;
+    let carouselInterval;
 
     onMounted(() => {
       updateTime();
@@ -637,6 +705,9 @@ export default {
       // 添加視窗大小變化監聽器
       window.addEventListener("resize", handleResize);
 
+      // 啟動輪播自動切換（每 4 秒切換一次）
+      carouselInterval = setInterval(nextAlert, 4000);
+
       // 添加緊急狀態閃爍效果
       setInterval(() => {
         const urgentElements = document.querySelectorAll(".urgent");
@@ -649,6 +720,9 @@ export default {
     onUnmounted(() => {
       if (timeInterval) {
         clearInterval(timeInterval);
+      }
+      if (carouselInterval) {
+        clearInterval(carouselInterval);
       }
       if (vantaEffect) {
         vantaEffect.destroy();
@@ -664,6 +738,8 @@ export default {
     return {
       currentTime,
       schedules,
+      alerts,
+      currentAlertIndex,
       vantaRef,
       shipModelRef,
       getRowClass,
@@ -701,7 +777,7 @@ body {
 
 .main-container {
   font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
-  font-size: 1.25rem;
+  font-size: 1.5rem; /* 24px = 1.5rem - H6 級別作為基礎字體 */
 }
 
 .header {
@@ -734,13 +810,11 @@ body {
 }
 
 .header h1 {
-  font-size: 4rem;
-  font-weight: bold;
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
 }
 
 .time {
-  font-size: 3.5rem;
+  font-size: 3.5rem; /* 56px = 3.5rem - H2 級別 */
   font-weight: bold;
   color: #ffeb3b;
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
@@ -792,7 +866,7 @@ body {
   border-radius: 8px;
   margin-bottom: 1.5vh;
   font-weight: bold;
-  font-size: 1.4rem;
+  font-size: 1.25rem; /* 32px = 2rem - H5 級別 */
   text-align: center;
 }
 
@@ -807,7 +881,7 @@ body {
   align-items: center;
   border-left: 4px solid transparent;
   transition: all 0.3s ease;
-  font-size: 1.2rem;
+  font-size: 1.5rem; /* 24px = 1.5rem - H6 級別 */
 }
 
 .ferry-row:hover {
@@ -831,14 +905,14 @@ body {
 }
 
 .time-slot {
-  font-size: 2rem;
+  font-size: 2.5rem; /* 40px = 2.5rem - H4 級別 */
   font-weight: bold;
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
   text-align: center;
 }
 
 .weather-detail {
-  font-size: 1rem;
+  font-size: 1.25rem; /* 20px = 1.25rem */
   opacity: 0.8;
   margin-top: 0.5vh;
 }
@@ -846,7 +920,7 @@ body {
 .comfort-level {
   padding: 1vh 1.5vw;
   border-radius: 20px;
-  font-size: 1.1rem;
+  font-size: 1.375rem; /* 22px = 1.375rem */
   font-weight: bold;
   text-align: center;
 }
@@ -872,7 +946,7 @@ body {
 .status {
   padding: 1vh 1.5vw;
   border-radius: 20px;
-  font-size: 1.1rem;
+  font-size: 1.375rem; /* 22px = 1.375rem */
   font-weight: bold;
   text-align: center;
 }
@@ -924,20 +998,14 @@ body {
 }
 
 .weather-title {
-  font-size: 1.6rem;
-  font-weight: bold;
-  margin-bottom: 1.5vh;
   color: #ffeb3b;
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
 }
 
 .weather-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: 1vh 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  font-size: 1.3rem;
+  font-size: 2rem; /* 32px = 2rem - H5 級別 */
 }
 
 .weather-item:last-child {
@@ -945,7 +1013,7 @@ body {
 }
 
 .weather-icon {
-  font-size: 1rem;
+  font-size: 1.5rem; /* 24px = 1.5rem - H6 級別 */
   margin-right: 8px;
 }
 
@@ -956,7 +1024,7 @@ body {
 }
 
 .forecast-date {
-  font-size: 1.4rem;
+  font-size: 2.5rem; /* 40px = 2.5rem - H4 級別 */
   font-weight: bold;
   color: #81d4fa;
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
@@ -965,11 +1033,11 @@ body {
 .forecast-icon {
   margin: 1vh 0;
   color: #81d4fa;
-  font-size: 2rem;
+  font-size: 3.5rem; /* 56px = 3.5rem - H2 級別 */
 }
 
 .forecast-temp {
-  font-size: 1.8rem;
+  font-size: 3rem; /* 48px = 3rem - H3 級別 */
   color: #ffeb3b;
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
 }
@@ -979,23 +1047,68 @@ body {
   border: 1px solid rgba(244, 67, 54, 0.5);
 }
 
+/* 輪播容器 */
+.alert-carousel {
+  position: relative;
+  height: 160px; /* 增加高度以容納兩個項目 */
+  overflow: hidden;
+}
+
+/* 輪播指示器 */
+.carousel-indicators {
+  display: flex;
+  gap: 6px;
+}
+
+.indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.indicator.active {
+  background: #ffeb3b;
+  box-shadow: 0 0 8px rgba(255, 235, 59, 0.6);
+}
+
+/* 輪播幻燈片 */
+.alert-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+}
+
+.alert-slide.slide-active {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* 輪播中的提醒項目 */
 .alert-item {
   display: flex;
   align-items: center;
   padding: 1.5vh 1vw;
-  margin-bottom: 1vh;
   background: rgba(244, 67, 54, 0.2);
   border-radius: 8px;
   border-left: 4px solid #f44336;
-  font-size: 1.1rem;
-}
-
-.alert-item:last-child {
+  font-size: 1.5rem; /* 24px = 1.5rem - H6 級別 */
   margin-bottom: 0;
+  flex: 1; /* 讓兩個項目平均分配空間 */
 }
 
 .alert-icon {
-  font-size: 1.2rem;
+  font-size: 1.75rem; /* 28px = 1.75rem */
   margin-right: 10px;
   color: #ffeb3b;
 }
@@ -1030,7 +1143,7 @@ body {
 }
 
 .footer-text {
-  font-size: 1.4rem;
+  font-size: 2.5rem; /* 40px = 2.5rem - H4 級別 */
   color: #ffeb3b;
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
 }
@@ -1067,16 +1180,9 @@ body {
 }
 
 /* Footer 資訊卡片樣式 */
-.footer-info {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
-  min-height: 240px;
-}
 
 .footer-info .footer-text {
-  font-size: 1.2rem;
+  font-size: 2rem; /* 32px = 2rem - H5 級別 */
   color: #ffeb3b;
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
   line-height: 1.5;
