@@ -461,11 +461,11 @@ export default {
       setTimeout(() => {
         // 嘗試載入 GLB 模型（應該比較穩定）
         const gltfLoader = new window.THREE.GLTFLoader();
-        console.log("開始載入 GLB 檔案...", "./src/images/porta.glb");
+        console.log("開始載入 GLB 檔案...", "/images/porta.glb");
         console.log("Canvas 已準備好:", CANVAS_WIDTH, "x", CANVAS_HEIGHT);
 
         gltfLoader.load(
-          "./src/images/porta.glb",
+          "/images/porta.glb",
           (gltf) => {
             console.log("GLB 載入成功!", gltf);
             console.log("場景內容:", gltf.scene);
@@ -593,7 +593,7 @@ export default {
             // 如果 GLB 失敗，回退到 FBX
             const fbxLoader = new window.THREE.FBXLoader();
             fbxLoader.load(
-              "./src/images/porta.fbx",
+              "/images/porta.fbx",
               (object) => {
                 console.log("FBX 載入成功!", object);
 
