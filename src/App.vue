@@ -281,7 +281,13 @@ export default {
       shipRenderer = new window.THREE.WebGLRenderer({
         alpha: true,
         antialias: true,
+        powerPreference: "high-performance", // 優先使用高效能 GPU
+        precision: "highp", // 高精度著色器
       });
+
+      // 設定高解析度渲染
+      const pixelRatio = Math.min(window.devicePixelRatio, 2); // 限制最大像素比為 2 以平衡效能
+      shipRenderer.setPixelRatio(pixelRatio);
       shipRenderer.setSize(
         shipModelRef.value.clientWidth,
         shipModelRef.value.clientHeight
@@ -289,6 +295,13 @@ export default {
       shipRenderer.setClearColor(0x000000, 0); // 完全透明背景
       shipRenderer.shadowMap.enabled = true;
       shipRenderer.shadowMap.type = window.THREE.PCFSoftShadowMap;
+
+      // 啟用色調映射以改善視覺品質
+      shipRenderer.toneMapping = window.THREE.ACESFilmicToneMapping;
+      shipRenderer.toneMappingExposure = 1.0;
+
+      // 啟用輸出編碼以改善色彩精度
+      shipRenderer.outputEncoding = window.THREE.sRGBEncoding;
       shipModelRef.value.appendChild(shipRenderer.domElement);
 
       // 添加多個燈光來增加亮度
@@ -298,8 +311,14 @@ export default {
       const directionalLight = new window.THREE.DirectionalLight(0xffffff, 1.5); // 增加方向光
       directionalLight.position.set(10, 10, 5);
       directionalLight.castShadow = true;
-      directionalLight.shadow.mapSize.width = 2048;
-      directionalLight.shadow.mapSize.height = 2048;
+      // 大幅提升陰影貼圖解析度
+      directionalLight.shadow.mapSize.width = 4096;
+      directionalLight.shadow.mapSize.height = 4096;
+      // 改善陰影品質
+      directionalLight.shadow.camera.near = 0.1;
+      directionalLight.shadow.camera.far = 50;
+      directionalLight.shadow.bias = -0.0001;
+      directionalLight.shadow.radius = 4;
       shipScene.add(directionalLight);
 
       // 添加多個點光源來增加亮度
@@ -379,6 +398,12 @@ export default {
                 );
                 child.castShadow = true;
                 child.receiveShadow = true;
+
+                // 如果幾何體有 UV 座標，啟用各向異性過濾以提升貼圖品質
+                if (child.geometry.attributes.uv) {
+                  child.geometry.computeVertexNormals();
+                }
+
                 if (child.material) {
                   // 確保材質可見並增加亮度
                   child.material.transparent = false;
@@ -396,6 +421,28 @@ export default {
                   if (child.material.color) {
                     child.material.color.multiplyScalar(1.1); // 增加亮度
                   }
+
+                  // 提升貼圖品質（如果有的話）
+                  if (child.material.map) {
+                    child.material.map.minFilter =
+                      window.THREE.LinearMipmapLinearFilter;
+                    child.material.map.magFilter = window.THREE.LinearFilter;
+                    child.material.map.anisotropy =
+                      shipRenderer.capabilities.getMaxAnisotropy();
+                  }
+
+                  // 如果有法線貼圖，也提升其品質
+                  if (child.material.normalMap) {
+                    child.material.normalMap.minFilter =
+                      window.THREE.LinearMipmapLinearFilter;
+                    child.material.normalMap.magFilter =
+                      window.THREE.LinearFilter;
+                    child.material.normalMap.anisotropy =
+                      shipRenderer.capabilities.getMaxAnisotropy();
+                  }
+
+                  // 標記材質需要更新
+                  child.material.needsUpdate = true;
                 }
               }
             });
@@ -430,7 +477,7 @@ export default {
             // 更新渲染循環以旋轉模型
             const animateModel = () => {
               requestAnimationFrame(animateModel);
-              model.rotation.y += 0.005; // 較慢的旋轉速度
+              model.rotation.y += 0.025; // 較慢的旋轉速度
               shipRenderer.render(shipScene, camera);
             };
             animateModel();
@@ -457,6 +504,44 @@ export default {
 
                 // 移除測試立方體
                 shipScene.remove(testCube);
+
+                // 為 FBX 模型應用相同的高品質設定
+                object.traverse((child) => {
+                  if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+
+                    // 如果幾何體有 UV 座標，啟用各向異性過濾以提升貼圖品質
+                    if (child.geometry.attributes.uv) {
+                      child.geometry.computeVertexNormals();
+                    }
+
+                    if (child.material) {
+                      // 提升貼圖品質（如果有的話）
+                      if (child.material.map) {
+                        child.material.map.minFilter =
+                          window.THREE.LinearMipmapLinearFilter;
+                        child.material.map.magFilter =
+                          window.THREE.LinearFilter;
+                        child.material.map.anisotropy =
+                          shipRenderer.capabilities.getMaxAnisotropy();
+                      }
+
+                      // 如果有法線貼圖，也提升其品質
+                      if (child.material.normalMap) {
+                        child.material.normalMap.minFilter =
+                          window.THREE.LinearMipmapLinearFilter;
+                        child.material.normalMap.magFilter =
+                          window.THREE.LinearFilter;
+                        child.material.normalMap.anisotropy =
+                          shipRenderer.capabilities.getMaxAnisotropy();
+                      }
+
+                      // 標記材質需要更新
+                      child.material.needsUpdate = true;
+                    }
+                  }
+                });
 
                 // 計算模型的邊界框來自動調整縮放
                 const box = new window.THREE.Box3().setFromObject(object);
@@ -503,6 +588,26 @@ export default {
       });
     };
 
+    // 處理視窗大小變化以維持高解析度
+    const handleResize = () => {
+      if (shipRenderer && shipModelRef.value && shipScene) {
+        const width = shipModelRef.value.clientWidth;
+        const height = shipModelRef.value.clientHeight;
+
+        // 更新渲染器尺寸並保持高像素比
+        const pixelRatio = Math.min(window.devicePixelRatio, 2);
+        shipRenderer.setPixelRatio(pixelRatio);
+        shipRenderer.setSize(width, height);
+
+        // 更新相機寬高比
+        const camera = shipScene.children.find((child) => child.isCamera);
+        if (camera) {
+          camera.aspect = width / height;
+          camera.updateProjectionMatrix();
+        }
+      }
+    };
+
     let timeInterval;
 
     onMounted(() => {
@@ -529,6 +634,9 @@ export default {
         initShipModel();
       }, 100);
 
+      // 添加視窗大小變化監聽器
+      window.addEventListener("resize", handleResize);
+
       // 添加緊急狀態閃爍效果
       setInterval(() => {
         const urgentElements = document.querySelectorAll(".urgent");
@@ -549,6 +657,8 @@ export default {
         shipModelRef.value.removeChild(shipRenderer.domElement);
         shipRenderer.dispose();
       }
+      // 移除視窗大小變化監聽器
+      window.removeEventListener("resize", handleResize);
     });
 
     return {
