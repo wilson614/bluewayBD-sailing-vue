@@ -5,18 +5,23 @@
 
     <!-- 主要內容 -->
     <div
-      class="w-full h-full flex flex-col relative text-white overflow-hidden bg-transparent gap-[2vh] main-container"
+      class="w-full h-full flex flex-col relative text-white overflow-hidden bg-transparent main-container"
     >
       <header class="flex justify-between items-center py-2 px-8">
         <h1>布袋港 藍色公路氣象台</h1>
-        <div class="time">{{ currentTime }}</div>
+        <div class="datetime-display flex flex-col items-end">
+          <div class="date-weekday text-xl text-gray-300">
+            {{ currentDate }} {{ currentWeekday }}
+          </div>
+          <div class="time text-yellow-400">{{ currentTime }}</div>
+        </div>
       </header>
 
       <main class="flex-1 grid grid-cols-3 gap-8 px-6 min-h-0 main-content">
         <!-- 左側區塊：船班時刻表 + 3D 模型 + Footer -->
         <section class="col-span-2 flex flex-col gap-8">
           <!-- 船班時刻表 -->
-          <div class="flex flex-col ferry-schedule">
+          <div class="flex flex-col ferry-schedule p-6">
             <div class="schedule-header">
               <div>預定出發</div>
               <div>船名</div>
@@ -27,39 +32,57 @@
               <div>開航狀態</div>
             </div>
 
-            <div class="flex flex-col gap-[1vh]">
+            <div class="flex flex-col items-center gap-2">
               <div
                 v-for="schedule in schedules"
                 :key="schedule.id"
                 class="ferry-row"
                 :class="getRowClass(schedule.comfort)"
               >
-                <div class="time-slot">{{ schedule.departure }}</div>
-                <div>{{ schedule.shipName }}</div>
-                <div>{{ schedule.pier }}</div>
-                <div class="time-slot">{{ schedule.arrival }}</div>
                 <div>
+                  <h4>{{ schedule.departure }}</h4>
+                </div>
+                <div>
+                  <h5>{{ schedule.shipName }}</h5>
+                </div>
+                <div>
+                  <h4>{{ schedule.pier }}</h4>
+                </div>
+                <div>
+                  <h5>{{ schedule.arrival }}</h5>
+                </div>
+                <div class="flex flex-col items-center">
                   <div>
-                    風力{{ schedule.windLevel }}級 浪高{{ schedule.waveHeight }}
+                    風力 <b class="px-1"> {{ schedule.windLevel }} </b>
+                    <small>級</small>
                   </div>
-                  <div class="weather-detail">
-                    能見度{{ schedule.visibility }}
+                  <div>
+                    浪高<b class="px-1">{{ schedule.waveHeight }}</b>
+                    <small>m</small>
+                  </div>
+                  <div>
+                    能見度<b class="px-1">{{ schedule.visibility }}</b>
+                    <small>km</small>
                   </div>
                 </div>
-                <div
-                  class="comfort-level"
-                  :class="getComfortClass(schedule.comfort)"
-                >
-                  {{ schedule.comfort }}
+                <div class="flex items-center justify-center">
+                  <div
+                    class="comfort-level"
+                    :class="getComfortClass(schedule.comfort)"
+                  >
+                    {{ schedule.comfort }}
+                  </div>
                 </div>
-                <div
-                  class="status"
-                  :class="[
-                    getStatusClass(schedule.status),
-                    { urgent: schedule.status === '可能停航' },
-                  ]"
-                >
-                  {{ schedule.status }}
+                <div class="flex items-center justify-center">
+                  <div
+                    class="status"
+                    :class="[
+                      getStatusClass(schedule.status),
+                      { urgent: schedule.status === '可能停航' },
+                    ]"
+                  >
+                    {{ schedule.status }}
+                  </div>
                 </div>
               </div>
             </div>
@@ -69,14 +92,15 @@
           <div class="flex flex-col gap-8">
             <!-- Footer 資訊 -->
             <div class="weather-card ship-model-card">
-              <div class="flex gap-4">
+              <div class="flex gap-4 items-center">
                 <!-- 3D 船舶模型 -->
                 <div
                   ref="shipModelRef"
-                  class="ship-model-container w-1/8 h-full"
+                  class="ship-model-container flex-none h-full"
                 ></div>
-                <div class="footer-text text-center w-7/8">
-                  請隨時注意現場廣播與看板<br />風級7級已達管制標準
+                <div class="text-center flex-1">
+                  <h4>請隨時注意現場廣播與看板</h4>
+                  <h4 class="text-orange-400 font-bold">風級7級已達管制標準</h4>
                 </div>
               </div>
             </div>
@@ -86,39 +110,41 @@
         <!-- 右側資訊面板 -->
         <aside class="flex flex-col gap-8">
           <!-- 馬公天氣 -->
-          <div class="weather-card">
+          <div class="weather-card flex flex-col gap-2">
             <div class="weather-title flex items-center gap-2">
-              <i class="fas fa-cloud fa-fw fa-lg"></i>
+              <i class="fas fa-cloud fa-fw fa-lg text-neutral-100"></i>
               <h4 class="inline-block">馬公天氣</h4>
             </div>
             <div class="weather-item flex items-center justify-between">
               <div class="flex items-center gap-4">
-                <i class="fas fa-temperature-low fa-fw"></i>
+                <i class="fas fa-temperature-low fa-fw fa-sm text-pink-300"></i>
                 <h5 class="inline-block">溫度</h5>
               </div>
-              <div><span>26~28</span><span class="text-xl ms-4">°C</span></div>
+              <div><b>26~28</b><span class="text-xl ms-4">°C</span></div>
             </div>
             <div class="weather-item flex items-center justify-between">
               <div class="flex items-center gap-4">
-                <i class="fas fa-tint weather-icon fa-fw"></i>
+                <i class="fas fa-tint weather-icon fa-fw text-sky-200"></i>
                 <h5 class="inline-block">降雨機率</h5>
               </div>
-              <div><span>80</span><span class="text-xl ms-4">%</span></div>
+              <div><b>80</b><span class="text-xl ms-4">%</span></div>
             </div>
             <div class="weather-item flex items-center justify-between">
               <div class="flex items-center gap-4">
-                <i class="fas fa-eye weather-icon fa-fw"></i>
+                <i class="fas fa-eye weather-icon fa-fw text-teal-400"></i>
                 <h5 class="inline-block">能見度</h5>
               </div>
-              <div><span>1-5</span><span class="text-xl ms-4">km</span></div>
+              <div><b>1-5</b><span class="text-xl ms-4">km</span></div>
             </div>
           </div>
 
           <!-- 貼心提醒輪播 -->
-          <div class="weather-card alerts">
+          <div class="weather-card alerts flex flex-col gap-2">
             <div class="weather-title flex items-center justify-between gap-2">
               <div class="flex items-center gap-2 mb-4">
-                <i class="fas fa-exclamation-triangle fa-fw fa-lg"></i>
+                <i
+                  class="fas fa-exclamation-triangle fa-fw fa-lg text-yellow-400"
+                ></i>
                 <h4 class="inline-block">貼心提醒</h4>
               </div>
               <div class="carousel-indicators">
@@ -133,9 +159,7 @@
             <div class="alert-carousel">
               <div class="alert-slide" :class="{ 'slide-active': true }">
                 <div class="alert-item">
-                  <i
-                    :class="alerts[currentAlertIndex].icon + ' alert-icon'"
-                  ></i>
+                  <i :class="alerts[currentAlertIndex].icon + ' me-2'"></i>
                   <span>{{ alerts[currentAlertIndex].message }}</span>
                 </div>
                 <div
@@ -145,7 +169,7 @@
                   <i
                     :class="
                       alerts[(currentAlertIndex + 1) % alerts.length].icon +
-                      ' alert-icon'
+                      ' me-2'
                     "
                   ></i>
                   <span>{{
@@ -157,19 +181,22 @@
           </div>
 
           <!-- 明日預報 -->
-          <div class="weather-card tomorrow-forecast">
+          <div class="weather-card tomorrow-forecast flex flex-col gap-6">
             <div class="weather-title flex items-center justify-between gap-2">
               <div class="flex items-center gap-2">
-                <i class="fas fa-calendar-alt"></i>
+                <i class="fas fa-calendar-alt fa-fw fa-lg text-gray-200"></i>
                 <h4 class="inline-block">明日預報</h4>
               </div>
-              <div class="forecast-date">8月9日 星期六</div>
+              <div class="forecast-date">8月9日(六)</div>
             </div>
             <div class="flex items-center justify-center gap-8">
-              <div class="forecast-icon">
-                <i class="fas fa-cloud-rain fa-2x"></i>
+              <div>
+                <i class="fas fa-cloud-rain fa-3x text-blue-custom"></i>
               </div>
-              <div class="forecast-temp">26~28°C</div>
+              <div>
+                <h4 class="inline-block">26~28</h4>
+                °C
+              </div>
             </div>
           </div>
         </aside>
@@ -185,6 +212,8 @@ export default {
   name: "App",
   setup() {
     const currentTime = ref("");
+    const currentDate = ref("");
+    const currentWeekday = ref("");
     const vantaRef = ref(null);
     const shipModelRef = ref(null);
     let vantaEffect = null;
@@ -199,8 +228,8 @@ export default {
         pier: "B1",
         arrival: "11:20",
         windLevel: 7,
-        waveHeight: "1.8m",
-        visibility: "1KM",
+        waveHeight: "1.8",
+        visibility: "1",
         comfort: "大力搖晃",
         status: "可能停航",
       },
@@ -211,8 +240,8 @@ export default {
         pier: "F2",
         arrival: "13:00",
         windLevel: 5,
-        waveHeight: "1.5m",
-        visibility: "3KM",
+        waveHeight: "1.5",
+        visibility: "3",
         comfort: "搖晃",
         status: "開航",
       },
@@ -223,8 +252,8 @@ export default {
         pier: "B1",
         arrival: "15:00",
         windLevel: 4,
-        waveHeight: "1m",
-        visibility: "5KM",
+        waveHeight: "1",
+        visibility: "5",
         comfort: "些微搖晃",
         status: "開航",
       },
@@ -234,27 +263,27 @@ export default {
     const alerts = ref([
       {
         id: 1,
-        icon: "fas fa-clock",
+        icon: "fas fa-clock fa-fw text-red-200",
         message: "抵達時間受海氣象因素延遲",
       },
       {
         id: 2,
-        icon: "fas fa-cloud-rain",
+        icon: "fas fa-cloud-rain fa-fw text-sky-200",
         message: "下雨機率80% 小心甲板濕滑",
       },
       {
         id: 3,
-        icon: "fas fa-pills",
+        icon: "fas fa-pills fa-fw text-lime-100",
         message: "因風浪搖晃建議準備暈船藥",
       },
       {
         id: 4,
-        icon: "fas fa-life-ring",
+        icon: "fas fa-life-ring fa-fw text-amber-200",
         message: "請確實穿著救生衣保持安全",
       },
       {
         id: 5,
-        icon: "fas fa-mobile-alt",
+        icon: "fas fa-mobile-alt fa-fw ",
         message: "船上提供免費 WiFi 供旅客使用",
       },
     ]);
@@ -262,11 +291,26 @@ export default {
     // 輪播狀態
     const currentAlertIndex = ref(0);
 
+    // 3D Canvas 尺寸設定（統一管理）
+    const CANVAS_WIDTH = 250;
+    const CANVAS_HEIGHT = 150;
+
     const updateTime = () => {
       const now = new Date();
       const hours = now.getHours().toString().padStart(2, "0");
       const minutes = now.getMinutes().toString().padStart(2, "0");
       currentTime.value = `${hours}:${minutes}`;
+
+      // 更新日期
+      const year = now.getFullYear();
+      const month = (now.getMonth() + 1).toString().padStart(2, "0");
+      const day = now.getDate().toString().padStart(2, "0");
+      currentDate.value = `${year}/${month}/${day}`;
+
+      // 更新星期幾
+      const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
+      const weekday = weekdays[now.getDay()];
+      currentWeekday.value = `星期${weekday}`;
     };
 
     const getRowClass = (comfort) => {
@@ -318,18 +362,14 @@ export default {
         return;
       }
 
-      // 設定固定的 canvas 尺寸
-      const canvasWidth = 400; // 您想要的寬度
-      const canvasHeight = 180; // 您想要的高度
-
-      console.log("Canvas 尺寸:", canvasWidth, "x", canvasHeight);
+      console.log("Canvas 尺寸:", CANVAS_WIDTH, "x", CANVAS_HEIGHT);
 
       // 創建場景
       shipScene = new window.THREE.Scene();
       // 不設定背景色，保持透明
 
       // 創建相機
-      const canvasAspect = canvasWidth / canvasHeight; // 使用 canvas 的寬高比
+      const canvasAspect = CANVAS_WIDTH / CANVAS_HEIGHT; // 使用 canvas 的寬高比
       const camera = new window.THREE.PerspectiveCamera(
         60, // 減小視野角度讓模型看起來更大
         canvasAspect,
@@ -351,7 +391,7 @@ export default {
       const pixelRatio = Math.min(window.devicePixelRatio, 2); // 限制最大像素比為 2 以平衡效能
       shipRenderer.setPixelRatio(pixelRatio);
       // 直接設定 canvas 尺寸
-      shipRenderer.setSize(canvasWidth, canvasHeight);
+      shipRenderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
       shipRenderer.setClearColor(0x000000, 0); // 完全透明背景
       shipRenderer.shadowMap.enabled = true;
       shipRenderer.shadowMap.type = window.THREE.PCFSoftShadowMap;
@@ -422,7 +462,7 @@ export default {
         // 嘗試載入 GLB 模型（應該比較穩定）
         const gltfLoader = new window.THREE.GLTFLoader();
         console.log("開始載入 GLB 檔案...", "./src/images/porta.glb");
-        console.log("Canvas 已準備好:", canvasWidth, "x", canvasHeight);
+        console.log("Canvas 已準備好:", CANVAS_WIDTH, "x", CANVAS_HEIGHT);
 
         gltfLoader.load(
           "./src/images/porta.glb",
@@ -646,19 +686,15 @@ export default {
     // 處理視窗大小變化以維持高解析度
     const handleResize = () => {
       if (shipRenderer && shipModelRef.value && shipScene) {
-        // 使用固定的 canvas 尺寸
-        const canvasWidth = 800;
-        const canvasHeight = 180;
-
         // 更新渲染器尺寸並保持高像素比
         const pixelRatio = Math.min(window.devicePixelRatio, 2);
         shipRenderer.setPixelRatio(pixelRatio);
-        shipRenderer.setSize(canvasWidth, canvasHeight);
+        shipRenderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
 
         // 更新相機寬高比
         const camera = shipScene.children.find((child) => child.isCamera);
         if (camera) {
-          camera.aspect = canvasWidth / canvasHeight;
+          camera.aspect = CANVAS_WIDTH / CANVAS_HEIGHT;
           camera.updateProjectionMatrix();
         }
       }
@@ -736,6 +772,8 @@ export default {
 
     return {
       currentTime,
+      currentDate,
+      currentWeekday,
       schedules,
       alerts,
       currentAlertIndex,
@@ -812,11 +850,24 @@ header h1 {
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
 }
 
+/* 日期時間顯示區塊 */
+.datetime-display {
+  text-align: right;
+}
+
+.date-weekday {
+  font-size: 1.25rem; /* 20px */
+  font-weight: 500;
+  color: #e5e7eb;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
+  font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  opacity: 0.9;
+}
+
 .time {
-  font-size: 3.5rem; /* 56px = 3.5rem - H2 級別 */
+  font-size: 2.25rem; /* 56px = 3.5rem - H2 級別 */
   font-weight: bold;
-  color: #ffeb3b;
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+  text-shadow: 2px 2px 8px rgba(17, 58, 109, 0.8);
   font-family: "Courier New", monospace;
 }
 
@@ -831,7 +882,6 @@ header h1 {
   );
   backdrop-filter: blur(20px) saturate(180%);
   border-radius: 20px;
-  padding: 2vh 2vw;
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
@@ -903,12 +953,11 @@ header h1 {
   background: rgba(33, 150, 243, 0.2);
 }
 
-.time-slot {
-  font-size: 2.5rem; /* 40px = 2.5rem - H4 級別 */
+/* .time-slot {
+  font-size: 2rem;
   font-weight: bold;
-  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
   text-align: center;
-}
+} */
 
 .weather-detail {
   font-size: 1.25rem; /* 20px = 1.25rem */
@@ -917,7 +966,7 @@ header h1 {
 }
 
 .comfort-level {
-  padding: 1vh 1.5vw;
+  padding: 1rem;
   border-radius: 20px;
   font-size: 1.375rem; /* 22px = 1.375rem */
   font-weight: bold;
@@ -962,8 +1011,6 @@ header h1 {
   box-shadow: 0 2px 8px rgba(76, 175, 80, 0.5);
 }
 
-/* weather-info 現在使用 Tailwind utilities */
-
 .weather-card {
   /* Liquid Glass 主要效果 */
   background: linear-gradient(
@@ -978,7 +1025,7 @@ header h1 {
   /* 進階玻璃效果 */
   backdrop-filter: blur(25px) saturate(200%) brightness(110%);
   border-radius: 24px;
-  padding: 2vh 2vw;
+  padding: 1.5rem;
 
   /* 多層邊框效果 */
   border: 1px solid rgba(255, 255, 255, 0.4);
@@ -990,7 +1037,6 @@ header h1 {
     /* 側邊光效 */ inset 1px 0 1px rgba(255, 255, 255, 0.3),
     inset -1px 0 1px rgba(255, 255, 255, 0.3);
 
-  position: relative;
   overflow: hidden;
 
   /* 動畫過渡 */
@@ -1101,15 +1147,7 @@ header h1 {
   z-index: 2;
 }
 
-.weather-title {
-  color: #ffeb3b;
-  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
-  position: relative;
-  z-index: 10;
-}
-
 .weather-item {
-  padding: 1vh 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   font-size: 2rem; /* 32px = 2rem - H5 級別 */
   position: relative;
@@ -1136,18 +1174,6 @@ header h1 {
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
 }
 
-.forecast-icon {
-  margin: 1vh 0;
-  color: #81d4fa;
-  font-size: 3.5rem; /* 56px = 3.5rem - H2 級別 */
-}
-
-.forecast-temp {
-  font-size: 3rem; /* 48px = 3rem - H3 級別 */
-  color: #ffeb3b;
-  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
-}
-
 .alerts {
   background: rgba(244, 67, 54, 0.3);
   border: 1px solid rgba(244, 67, 54, 0.5);
@@ -1156,7 +1182,7 @@ header h1 {
 /* 輪播容器 */
 .alert-carousel {
   position: relative;
-  min-height: 100px;
+  min-height: 150px;
   height: auto; /* 增加高度以容納兩個項目 */
   overflow: hidden;
 }
@@ -1209,15 +1235,9 @@ header h1 {
   background: rgba(244, 67, 54, 0.2);
   border-radius: 8px;
   border-left: 4px solid #f44336;
-  font-size: 1.25rem; /* 24px = 1.5rem - H6 級別 */
+  font-size: 1.35rem; /* 24px = 1.5rem - H6 級別 */
   margin-bottom: 0;
   flex: 1; /* 讓兩個項目平均分配空間 */
-}
-
-.alert-icon {
-  font-size: 1.75rem; /* 28px = 1.75rem */
-  margin-right: 10px;
-  color: #ffeb3b;
 }
 
 .footer {
@@ -1249,11 +1269,6 @@ header h1 {
   );
 }
 
-.footer-text {
-  color: #ffeb3b;
-  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
-}
-
 .mascot {
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
 }
@@ -1276,10 +1291,6 @@ header h1 {
 .ship-model-container {
   overflow: hidden;
   background: transparent; /* 完全透明背景 */
-}
-
-.ship-model-card {
-  min-height: 240px;
 }
 
 /* Footer 資訊卡片樣式 */

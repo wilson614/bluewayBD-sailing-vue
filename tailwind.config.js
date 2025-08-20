@@ -11,6 +11,10 @@ export default {
       },
       aspectRatio: {
         '16/9': '16 / 9',
+      },
+      colors: {
+        'blue-custom': '#81d4fa',
+        'pink-custom': '#f47bc8',
       }
     },
   },
