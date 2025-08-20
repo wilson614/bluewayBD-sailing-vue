@@ -84,7 +84,7 @@
         </section>
 
         <!-- 右側資訊面板 -->
-        <aside class="flex flex-col gap-8 overflow-y-auto weather-info">
+        <aside class="flex flex-col gap-8">
           <!-- 馬公天氣 -->
           <div class="weather-card">
             <div class="weather-title flex items-center gap-2">
@@ -965,46 +965,155 @@ header h1 {
 /* weather-info 現在使用 Tailwind utilities */
 
 .weather-card {
+  /* Liquid Glass 主要效果 */
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0.08) 25%,
     rgba(255, 255, 255, 0.05) 50%,
-    rgba(255, 255, 255, 0.02) 100%
+    rgba(255, 255, 255, 0.08) 75%,
+    rgba(255, 255, 255, 0.15) 100%
   );
-  backdrop-filter: blur(20px) saturate(180%);
-  border-radius: 20px;
+
+  /* 進階玻璃效果 */
+  backdrop-filter: blur(25px) saturate(200%) brightness(110%);
+  border-radius: 24px;
   padding: 2vh 2vw;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+  /* 多層邊框效果 */
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 
+    /* 外層光暈 */ 0 8px 32px rgba(31, 38, 135, 0.3),
+    0 16px 64px rgba(31, 38, 135, 0.15),
+    /* 內層高光 */ inset 0 1px 1px rgba(255, 255, 255, 0.6),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.1),
+    /* 側邊光效 */ inset 1px 0 1px rgba(255, 255, 255, 0.3),
+    inset -1px 0 1px rgba(255, 255, 255, 0.3);
+
   position: relative;
+  overflow: hidden;
+
+  /* 動畫過渡 */
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Hover 互動效果 */
+.weather-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  backdrop-filter: blur(30px) saturate(220%) brightness(120%);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 
+    /* 加強外層光暈 */ 0 16px 48px rgba(31, 38, 135, 0.4),
+    0 24px 80px rgba(31, 38, 135, 0.2),
+    /* 內層高光增強 */ inset 0 1px 2px rgba(255, 255, 255, 0.8),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.2),
+    /* 側邊光效增強 */ inset 2px 0 2px rgba(255, 255, 255, 0.4),
+    inset -2px 0 2px rgba(255, 255, 255, 0.4);
+}
+
+.weather-card:hover::before {
+  opacity: 1;
+}
+
+.weather-card:hover::after {
+  left: 100%;
+}
+
+/* 點擊漣漪效果 */
+.weather-card:active {
+  transform: translateY(-2px) scale(0.98);
+  transition: all 0.1s ease-out;
+}
+
+/* 額外的光澤層 */
+.weather-card .card-content {
+  position: relative;
+  z-index: 10;
+}
+
+/* 效能優化 */
+.weather-card {
+  /* GPU 加速 */
+  will-change: transform, backdrop-filter;
+  transform: translateZ(0);
+
+  /* 瀏覽器兼容性 */
+  -webkit-backdrop-filter: blur(25px) saturate(200%) brightness(110%);
+  -moz-backdrop-filter: blur(25px) saturate(200%) brightness(110%);
+}
+
+.weather-card:hover {
+  -webkit-backdrop-filter: blur(30px) saturate(220%) brightness(120%);
+  -moz-backdrop-filter: blur(30px) saturate(220%) brightness(120%);
+}
+
+/* 降級支援：無 backdrop-filter 的瀏覽器 */
+@supports not (backdrop-filter: blur(1px)) {
+  .weather-card {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.25) 0%,
+      rgba(255, 255, 255, 0.15) 50%,
+      rgba(255, 255, 255, 0.25) 100%
+    );
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.5),
+      inset 0 1px 1px rgba(255, 255, 255, 0.8);
+  }
+}
+
+/* 動態光效和反射 */
 .weather-card::before {
   content: "";
   position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0.1) 25%,
+    transparent 50%
+  );
+  opacity: 0;
+  transform: rotate(45deg);
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.weather-card::after {
+  content: "";
+  position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
+  left: -100%;
+  width: 100%;
+  height: 100%;
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.4),
+    rgba(255, 255, 255, 0.6),
     transparent
   );
-  border-radius: 20px 20px 0 0;
+  transform: skewX(-15deg);
+  transition: left 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 2;
 }
 
 .weather-title {
   color: #ffeb3b;
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
+  position: relative;
+  z-index: 10;
 }
 
 .weather-item {
   padding: 1vh 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   font-size: 2rem; /* 32px = 2rem - H5 級別 */
+  position: relative;
+  z-index: 10;
 }
 
 .weather-item:last-child {
