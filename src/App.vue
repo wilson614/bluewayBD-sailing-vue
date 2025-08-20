@@ -7,9 +7,7 @@
     <div
       class="w-full h-full flex flex-col relative text-white overflow-hidden bg-transparent gap-[2vh] main-container"
     >
-      <header
-        class="flex justify-between items-center py-4 px-8 min-h-[12vh] header"
-      >
+      <header class="flex justify-between items-center py-2 px-8">
         <h1>布袋港 藍色公路氣象台</h1>
         <div class="time">{{ currentTime }}</div>
       </header>
@@ -18,7 +16,7 @@
         <!-- 左側區塊：船班時刻表 + 3D 模型 + Footer -->
         <section class="col-span-2 flex flex-col gap-8">
           <!-- 船班時刻表 -->
-          <div class="flex-1 ferry-schedule">
+          <div class="flex flex-col ferry-schedule">
             <div class="schedule-header">
               <div>預定出發</div>
               <div>船名</div>
@@ -91,7 +89,7 @@
           <div class="weather-card">
             <div class="weather-title flex items-center gap-2">
               <i class="fas fa-cloud fa-fw fa-lg"></i>
-              <h3 class="inline-block">馬公天氣</h3>
+              <h4 class="inline-block">馬公天氣</h4>
             </div>
             <div class="weather-item flex items-center justify-between">
               <div class="flex items-center gap-4">
@@ -119,9 +117,9 @@
           <!-- 貼心提醒輪播 -->
           <div class="weather-card alerts">
             <div class="weather-title flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 mb-4">
                 <i class="fas fa-exclamation-triangle fa-fw fa-lg"></i>
-                <h3 class="inline-block">貼心提醒</h3>
+                <h4 class="inline-block">貼心提醒</h4>
               </div>
               <div class="carousel-indicators">
                 <div
@@ -161,7 +159,10 @@
           <!-- 明日預報 -->
           <div class="weather-card tomorrow-forecast">
             <div class="weather-title flex items-center justify-between gap-2">
-              <div><i class="fas fa-calendar-alt"></i> 明日預報</div>
+              <div class="flex items-center gap-2">
+                <i class="fas fa-calendar-alt"></i>
+                <h4 class="inline-block">明日預報</h4>
+              </div>
               <div class="forecast-date">8月9日 星期六</div>
             </div>
             <div class="flex items-center justify-center gap-8">
@@ -317,21 +318,21 @@ export default {
         return;
       }
 
-      console.log(
-        "容器尺寸:",
-        shipModelRef.value.clientWidth,
-        "x",
-        shipModelRef.value.clientHeight
-      );
+      // 設定固定的 canvas 尺寸
+      const canvasWidth = 400; // 您想要的寬度
+      const canvasHeight = 180; // 您想要的高度
+
+      console.log("Canvas 尺寸:", canvasWidth, "x", canvasHeight);
 
       // 創建場景
       shipScene = new window.THREE.Scene();
       // 不設定背景色，保持透明
 
       // 創建相機
+      const canvasAspect = canvasWidth / canvasHeight; // 使用 canvas 的寬高比
       const camera = new window.THREE.PerspectiveCamera(
         60, // 減小視野角度讓模型看起來更大
-        shipModelRef.value.clientWidth / shipModelRef.value.clientHeight,
+        canvasAspect,
         0.1,
         1000
       );
@@ -349,10 +350,8 @@ export default {
       // 設定高解析度渲染
       const pixelRatio = Math.min(window.devicePixelRatio, 2); // 限制最大像素比為 2 以平衡效能
       shipRenderer.setPixelRatio(pixelRatio);
-      shipRenderer.setSize(
-        shipModelRef.value.clientWidth,
-        shipModelRef.value.clientHeight
-      );
+      // 直接設定 canvas 尺寸
+      shipRenderer.setSize(canvasWidth, canvasHeight);
       shipRenderer.setClearColor(0x000000, 0); // 完全透明背景
       shipRenderer.shadowMap.enabled = true;
       shipRenderer.shadowMap.type = window.THREE.PCFSoftShadowMap;
@@ -423,12 +422,7 @@ export default {
         // 嘗試載入 GLB 模型（應該比較穩定）
         const gltfLoader = new window.THREE.GLTFLoader();
         console.log("開始載入 GLB 檔案...", "./src/images/porta.glb");
-        console.log(
-          "容器已準備好:",
-          shipModelRef.value.clientWidth,
-          "x",
-          shipModelRef.value.clientHeight
-        );
+        console.log("Canvas 已準備好:", canvasWidth, "x", canvasHeight);
 
         gltfLoader.load(
           "./src/images/porta.glb",
@@ -652,18 +646,19 @@ export default {
     // 處理視窗大小變化以維持高解析度
     const handleResize = () => {
       if (shipRenderer && shipModelRef.value && shipScene) {
-        const width = shipModelRef.value.clientWidth;
-        const height = shipModelRef.value.clientHeight;
+        // 使用固定的 canvas 尺寸
+        const canvasWidth = 800;
+        const canvasHeight = 180;
 
         // 更新渲染器尺寸並保持高像素比
         const pixelRatio = Math.min(window.devicePixelRatio, 2);
         shipRenderer.setPixelRatio(pixelRatio);
-        shipRenderer.setSize(width, height);
+        shipRenderer.setSize(canvasWidth, canvasHeight);
 
         // 更新相機寬高比
         const camera = shipScene.children.find((child) => child.isCamera);
         if (camera) {
-          camera.aspect = width / height;
+          camera.aspect = canvasWidth / canvasHeight;
           camera.updateProjectionMatrix();
         }
       }
@@ -694,6 +689,10 @@ export default {
           minWidth: 200.0,
           scale: 1.0,
           scaleMobile: 1.0,
+          shininess: 74.0,
+          waveHeight: 27.5,
+          waveSpeed: 0.55,
+          zoom: 0.85,
         });
       }
 
@@ -809,7 +808,7 @@ body {
   );
 }
 
-.header h1 {
+header h1 {
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
 }
 
@@ -1024,8 +1023,6 @@ body {
 }
 
 .forecast-date {
-  font-size: 2.5rem; /* 40px = 2.5rem - H4 級別 */
-  font-weight: bold;
   color: #81d4fa;
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
 }
@@ -1050,7 +1047,8 @@ body {
 /* 輪播容器 */
 .alert-carousel {
   position: relative;
-  height: 160px; /* 增加高度以容納兩個項目 */
+  min-height: 100px;
+  height: auto; /* 增加高度以容納兩個項目 */
   overflow: hidden;
 }
 
@@ -1098,11 +1096,11 @@ body {
 .alert-item {
   display: flex;
   align-items: center;
-  padding: 1.5vh 1vw;
+  padding: 0.5rem 1rem;
   background: rgba(244, 67, 54, 0.2);
   border-radius: 8px;
   border-left: 4px solid #f44336;
-  font-size: 1.5rem; /* 24px = 1.5rem - H6 級別 */
+  font-size: 1.25rem; /* 24px = 1.5rem - H6 級別 */
   margin-bottom: 0;
   flex: 1; /* 讓兩個項目平均分配空間 */
 }
@@ -1143,7 +1141,6 @@ body {
 }
 
 .footer-text {
-  font-size: 2.5rem; /* 40px = 2.5rem - H4 級別 */
   color: #ffeb3b;
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
 }
@@ -1168,9 +1165,6 @@ body {
 
 /* 3D 船舶模型樣式 */
 .ship-model-container {
-  width: 100%;
-  height: 180px;
-  border-radius: 12px;
   overflow: hidden;
   background: transparent; /* 完全透明背景 */
 }
