@@ -60,10 +60,10 @@
                     浪高<b class="px-1">{{ schedule.waveHeight }}</b>
                     <small>m</small>
                   </div>
-                  <div>
+                  <!-- <div>
                     能見度<b class="px-1">{{ schedule.visibility }}</b>
                     <small>km</small>
-                  </div>
+                  </div> -->
                 </div>
                 <div class="flex items-center justify-center">
                   <div
@@ -111,30 +111,60 @@
         <aside class="flex flex-col gap-8">
           <!-- 馬公天氣 -->
           <div class="weather-card flex flex-col gap-2">
-            <div class="weather-title flex items-center gap-2">
-              <i class="fas fa-cloud fa-fw fa-lg text-neutral-100"></i>
-              <h4 class="inline-block">馬公天氣</h4>
-            </div>
-            <div class="weather-item flex items-center justify-between">
-              <div class="flex items-center gap-4">
-                <i class="fas fa-temperature-low fa-fw fa-sm text-pink-300"></i>
-                <h5 class="inline-block">溫度</h5>
+            <div class="weather-title flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-cloud fa-fw fa-lg text-neutral-100"></i>
+                <h4 class="inline-block">馬公天氣</h4>
+                <div class="weather-time-indicator-inline ml-4">
+                  <p class="text-sky-200 font-bold inline-block">
+                    {{ weatherData[currentWeatherIndex].title }}
+                  </p>
+                </div>
               </div>
-              <div><b>26~28</b><span class="text-xl ms-4">°C</span></div>
-            </div>
-            <div class="weather-item flex items-center justify-between">
-              <div class="flex items-center gap-4">
-                <i class="fas fa-tint weather-icon fa-fw text-sky-200"></i>
-                <h5 class="inline-block">降雨機率</h5>
+              <div class="weather-carousel-indicators">
+                <div
+                  v-for="(weather, index) in weatherData"
+                  :key="weather.id"
+                  class="weather-indicator"
+                  :class="{ active: currentWeatherIndex === index }"
+                ></div>
               </div>
-              <div><b>80</b><span class="text-xl ms-4">%</span></div>
             </div>
-            <div class="weather-item flex items-center justify-between">
-              <div class="flex items-center gap-4">
-                <i class="fas fa-eye weather-icon fa-fw text-teal-400"></i>
-                <h5 class="inline-block">能見度</h5>
+            <div class="weather-carousel">
+              <div class="weather-content">
+                <div class="weather-item flex items-center justify-between">
+                  <div class="flex items-center gap-4">
+                    <i
+                      class="fas fa-temperature-low fa-fw fa-sm text-pink-300"
+                    ></i>
+                    <h5 class="inline-block">溫度</h5>
+                  </div>
+                  <div>
+                    <b>{{ weatherData[currentWeatherIndex].temperature }}</b
+                    ><span class="text-xl ms-4">°C</span>
+                  </div>
+                </div>
+                <div class="weather-item flex items-center justify-between">
+                  <div class="flex items-center gap-4">
+                    <i class="fas fa-tint weather-icon fa-fw text-sky-200"></i>
+                    <h5 class="inline-block">降雨機率</h5>
+                  </div>
+                  <div>
+                    <b>{{ weatherData[currentWeatherIndex].rainChance }}</b
+                    ><span class="text-xl ms-4">%</span>
+                  </div>
+                </div>
+                <div class="weather-item flex items-center justify-between">
+                  <div class="flex items-center gap-4">
+                    <i class="fas fa-eye weather-icon fa-fw text-teal-400"></i>
+                    <h5 class="inline-block">能見度</h5>
+                  </div>
+                  <div>
+                    <b>{{ weatherData[currentWeatherIndex].visibility }}</b
+                    ><span class="text-xl ms-4">km</span>
+                  </div>
+                </div>
               </div>
-              <div><b>1-5</b><span class="text-xl ms-4">km</span></div>
             </div>
           </div>
 
@@ -290,6 +320,37 @@ export default {
 
     // 輪播狀態
     const currentAlertIndex = ref(0);
+
+    // 馬公天氣資料（根據抵達時間）
+    const weatherData = ref([
+      {
+        id: 1,
+        arrivalTime: "11:20",
+        temperature: "25~27",
+        rainChance: 75,
+        visibility: "2-4",
+        title: "11:20 抵達時段",
+      },
+      {
+        id: 2,
+        arrivalTime: "13:00",
+        temperature: "26~28",
+        rainChance: 80,
+        visibility: "1-5",
+        title: "13:00 抵達時段",
+      },
+      {
+        id: 3,
+        arrivalTime: "15:00",
+        temperature: "27~29",
+        rainChance: 65,
+        visibility: "3-6",
+        title: "15:00 抵達時段",
+      },
+    ]);
+
+    // 當前顯示的天氣索引
+    const currentWeatherIndex = ref(0);
 
     // 3D Canvas 尺寸設定（統一管理）
     const CANVAS_WIDTH = 250;
@@ -706,8 +767,22 @@ export default {
         (currentAlertIndex.value + 2) % alerts.value.length;
     };
 
+    // 天氣輪播自動切換功能
+    const nextWeather = () => {
+      currentWeatherIndex.value =
+        (currentWeatherIndex.value + 1) % weatherData.value.length;
+    };
+
+    // 根據船班抵達時間同步天氣資訊
+    const syncWeatherWithSchedule = () => {
+      // 直接按照順序輪播天氣資訊
+      currentWeatherIndex.value =
+        (currentWeatherIndex.value + 1) % weatherData.value.length;
+    };
+
     let timeInterval;
     let carouselInterval;
+    let weatherCarouselInterval;
 
     onMounted(() => {
       updateTime();
@@ -743,6 +818,9 @@ export default {
       // 啟動輪播自動切換（每 4 秒切換一次）
       carouselInterval = setInterval(nextAlert, 4000);
 
+      // 啟動天氣輪播自動切換（每 5 秒切換一次）
+      weatherCarouselInterval = setInterval(nextWeather, 5000);
+
       // 添加緊急狀態閃爍效果
       setInterval(() => {
         const urgentElements = document.querySelectorAll(".urgent");
@@ -758,6 +836,9 @@ export default {
       }
       if (carouselInterval) {
         clearInterval(carouselInterval);
+      }
+      if (weatherCarouselInterval) {
+        clearInterval(weatherCarouselInterval);
       }
       if (vantaEffect) {
         vantaEffect.destroy();
@@ -777,6 +858,8 @@ export default {
       schedules,
       alerts,
       currentAlertIndex,
+      weatherData,
+      currentWeatherIndex,
       vantaRef,
       shipModelRef,
       getRowClass,
@@ -931,6 +1014,7 @@ header h1 {
   border-left: 4px solid transparent;
   transition: all 0.3s ease;
   font-size: 1.5rem; /* 24px = 1.5rem - H6 級別 */
+  width: 100%;
 }
 
 .ferry-row:hover {
@@ -1182,9 +1266,20 @@ header h1 {
 /* 輪播容器 */
 .alert-carousel {
   position: relative;
-  min-height: 150px;
+  min-height: 15vh;
   height: auto; /* 增加高度以容納兩個項目 */
   overflow: hidden;
+}
+
+/* 天氣輪播容器 */
+.weather-carousel {
+  min-height: 15vh;
+  height: auto;
+}
+
+/* 天氣內容 */
+.weather-content {
+  transition: all 0.3s ease;
 }
 
 /* 輪播指示器 */
@@ -1205,6 +1300,26 @@ header h1 {
 .indicator.active {
   background: #ffeb3b;
   box-shadow: 0 0 8px rgba(255, 235, 59, 0.6);
+}
+
+/* 天氣輪播指示器 */
+.weather-carousel-indicators {
+  display: flex;
+  gap: 6px;
+}
+
+.weather-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.weather-indicator.active {
+  background: #00bcd4;
+  box-shadow: 0 0 8px rgba(0, 188, 212, 0.6);
 }
 
 /* 輪播幻燈片 */
@@ -1231,13 +1346,39 @@ header h1 {
 .alert-item {
   display: flex;
   align-items: center;
-  padding: 0.5rem 1rem;
+  padding: 0.25rem 1rem;
   background: rgba(244, 67, 54, 0.2);
   border-radius: 8px;
   border-left: 4px solid #f44336;
-  font-size: 1.35rem; /* 24px = 1.5rem - H6 級別 */
+  font-size: 1.25rem; /* 24px = 1.5rem - H6 級別 */
   margin-bottom: 0;
   flex: 1; /* 讓兩個項目平均分配空間 */
+}
+
+/* 天氣幻燈片 */
+.weather-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.weather-slide.slide-active {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* 天氣時間指示器 */
+.weather-time-indicator {
+  padding: 0.5rem;
+  background: rgba(0, 188, 212, 0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 188, 212, 0.4);
+  margin-bottom: 1rem;
 }
 
 .footer {
