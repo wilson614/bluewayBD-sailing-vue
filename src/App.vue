@@ -352,6 +352,10 @@ export default {
     // 當前顯示的天氣索引
     const currentWeatherIndex = ref(0);
 
+    // 效能監控
+    const isLowPerformanceDevice = ref(false);
+    const shouldReduceEffects = ref(false);
+
     // 3D Canvas 尺寸設定（統一管理）
     const CANVAS_WIDTH = 250;
     const CANVAS_HEIGHT = 150;
@@ -440,73 +444,47 @@ export default {
       camera.position.set(2, 1.25, 2); // 拉近相機距離
       camera.lookAt(0, 0, 0);
 
-      // 創建渲染器
+      // 創建渲染器（優化設定降低 GPU 負擔）
       shipRenderer = new window.THREE.WebGLRenderer({
         alpha: true,
-        antialias: true,
-        powerPreference: "high-performance", // 優先使用高效能 GPU
-        precision: "highp", // 高精度著色器
+        antialias: false, // 關閉反鋸齒減少 GPU 負擔
+        powerPreference: "low-power", // 優先使用低功耗 GPU
+        precision: "mediump", // 使用中等精度著色器
       });
 
-      // 設定高解析度渲染
-      const pixelRatio = Math.min(window.devicePixelRatio, 2); // 限制最大像素比為 2 以平衡效能
+      // 設定適中解析度渲染
+      const pixelRatio = Math.min(window.devicePixelRatio, 1.5); // 進一步限制像素比以平衡效能
       shipRenderer.setPixelRatio(pixelRatio);
       // 直接設定 canvas 尺寸
       shipRenderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
       shipRenderer.setClearColor(0x000000, 0); // 完全透明背景
-      shipRenderer.shadowMap.enabled = true;
-      shipRenderer.shadowMap.type = window.THREE.PCFSoftShadowMap;
+      shipRenderer.shadowMap.enabled = false; // 關閉陰影減少運算負擔
 
-      // 啟用色調映射以改善視覺品質
-      shipRenderer.toneMapping = window.THREE.ACESFilmicToneMapping;
-      shipRenderer.toneMappingExposure = 1.0;
-
-      // 啟用輸出編碼以改善色彩精度
-      shipRenderer.outputEncoding = window.THREE.sRGBEncoding;
+      // 簡化色調映射設定
+      shipRenderer.toneMapping = window.THREE.LinearToneMapping;
+      shipRenderer.toneMappingExposure = 1.4;
       shipModelRef.value.appendChild(shipRenderer.domElement);
 
-      // 添加多個燈光來增加亮度
-      const ambientLight = new window.THREE.AmbientLight(0xffffff, 1.2); // 增加環境光
+      // 簡化光照設定減少 GPU 負擔
+      const ambientLight = new window.THREE.AmbientLight(0xffffff, 1.8); // 提高環境光補償其他光源減少
       shipScene.add(ambientLight);
 
-      const directionalLight = new window.THREE.DirectionalLight(0xffffff, 1.5); // 增加方向光
+      // 只保留一個方向光，不使用陰影
+      const directionalLight = new window.THREE.DirectionalLight(0xffffff, 1);
       directionalLight.position.set(10, 10, 5);
-      directionalLight.castShadow = true;
-      // 大幅提升陰影貼圖解析度
-      directionalLight.shadow.mapSize.width = 4096;
-      directionalLight.shadow.mapSize.height = 4096;
-      // 改善陰影品質
-      directionalLight.shadow.camera.near = 0.1;
-      directionalLight.shadow.camera.far = 50;
-      directionalLight.shadow.bias = -0.0001;
-      directionalLight.shadow.radius = 4;
+      directionalLight.castShadow = false; // 關閉陰影
       shipScene.add(directionalLight);
-
-      // 添加多個點光源來增加亮度
-      const pointLight1 = new window.THREE.PointLight(0xffffff, 0.8, 100);
-      pointLight1.position.set(5, 5, 5);
-      shipScene.add(pointLight1);
-
-      const pointLight2 = new window.THREE.PointLight(0xffffff, 0.6, 100);
-      pointLight2.position.set(-5, 5, 5);
-      shipScene.add(pointLight2);
-
-      const pointLight3 = new window.THREE.PointLight(0xffffff, 0.4, 100);
-      pointLight3.position.set(0, -3, 5);
-      shipScene.add(pointLight3);
 
       // 先添加一個測試立方體來確認場景正常
       const geometry = new window.THREE.BoxGeometry(0.8, 0.8, 0.8);
-      const material = new window.THREE.MeshPhongMaterial({
+      const material = new window.THREE.MeshLambertMaterial({
+        // 使用更簡單的 Lambert 材質
         color: 0x00ff88,
         transparent: false,
         opacity: 1.0,
-        shininess: 100,
       });
       const testCube = new window.THREE.Mesh(geometry, material);
       testCube.position.set(0, 0, 0);
-      testCube.castShadow = true;
-      testCube.receiveShadow = true;
       shipScene.add(testCube);
 
       // 渲染循環（先顯示測試立方體）
@@ -570,7 +548,7 @@ export default {
                     child.material.emissive.setHex(0x111111); // 輕微發光
                   }
                   if (child.material.emissiveIntensity !== undefined) {
-                    child.material.emissiveIntensity = 0.2;
+                    child.material.emissiveIntensity = 0.4;
                   }
 
                   // 增加材質亮度
@@ -630,11 +608,17 @@ export default {
               shipScene.children.length
             );
 
-            // 更新渲染循環以旋轉模型
-            const animateModel = () => {
+            // 更新渲染循環以旋轉模型（降低幀率）
+            let lastTime = 0;
+            const animateModel = (currentTime) => {
               requestAnimationFrame(animateModel);
-              model.rotation.y += 0.025; // 較慢的旋轉速度
-              shipRenderer.render(shipScene, camera);
+
+              // 限制到 30 FPS 減少 GPU 負擔
+              if (currentTime - lastTime > 33) {
+                model.rotation.y += 0.015; // 更慢的旋轉速度
+                shipRenderer.render(shipScene, camera);
+                lastTime = currentTime;
+              }
             };
             animateModel();
           },
@@ -716,11 +700,17 @@ export default {
                 shipScene.add(object);
                 console.log("FBX 模型已添加到場景");
 
-                // 更新渲染循環以旋轉模型
-                const animateModel = () => {
+                // 更新渲染循環以旋轉模型（降低幀率）
+                let lastTime = 0;
+                const animateModel = (currentTime) => {
                   requestAnimationFrame(animateModel);
-                  object.rotation.y += 0.005;
-                  shipRenderer.render(shipScene, camera);
+
+                  // 限制到 30 FPS 減少 GPU 負擔
+                  if (currentTime - lastTime > 33) {
+                    object.rotation.y += 0.003; // 更慢的旋轉速度
+                    shipRenderer.render(shipScene, camera);
+                    lastTime = currentTime;
+                  }
                 };
                 animateModel();
               },
@@ -780,6 +770,63 @@ export default {
         (currentWeatherIndex.value + 1) % weatherData.value.length;
     };
 
+    // 效能檢測函數
+    const detectPerformance = () => {
+      // 檢測裝置記憶體
+      const memory = navigator.deviceMemory || 4;
+      // 檢測硬體並行度
+      const cores = navigator.hardwareConcurrency || 2;
+      // 檢測是否為行動裝置
+      const isMobile =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        );
+
+      // 判斷是否為低效能裝置
+      isLowPerformanceDevice.value = memory < 4 || cores < 4 || isMobile;
+      shouldReduceEffects.value =
+        isLowPerformanceDevice.value || window.innerWidth < 1200;
+
+      console.log("效能檢測結果:", {
+        memory,
+        cores,
+        isMobile,
+        isLowPerformanceDevice: isLowPerformanceDevice.value,
+        shouldReduceEffects: shouldReduceEffects.value,
+      });
+    };
+
+    // 效能適配的 VANTA 設定
+    const getVantaConfig = () => {
+      if (shouldReduceEffects.value) {
+        return {
+          mouseControls: false,
+          touchControls: false,
+          gyroControls: false,
+          scale: 0.3,
+          scaleMobile: 0.2,
+          shininess: 10.0,
+          waveHeight: 8.0,
+          waveSpeed: 0.1,
+          zoom: 2.0,
+          forceAnimate: false,
+        };
+      } else {
+        return {
+          mouseControls: false,
+          touchControls: false,
+          gyroControls: false,
+          scale: 0.7,
+          scaleMobile: 0.5,
+          shininess: 30.0,
+          waveHeight: 15.0,
+          waveSpeed: 0.3,
+          zoom: 1.2,
+          forceAnimate: false,
+        };
+      }
+    };
+
     let timeInterval;
     let carouselInterval;
     let weatherCarouselInterval;
@@ -788,29 +835,42 @@ export default {
       updateTime();
       timeInterval = setInterval(updateTime, 60000);
 
-      // 初始化 VANTA 波浪效果
-      if (window.VANTA && window.THREE) {
+      // 先進行效能檢測
+      detectPerformance();
+
+      // 根據裝置效能初始化 VANTA 波浪效果
+      if (window.VANTA && window.THREE && !shouldReduceEffects.value) {
+        const vantaConfig = getVantaConfig();
         vantaEffect = window.VANTA.WAVES({
           el: vantaRef.value,
           THREE: window.THREE,
-          mouseControls: true,
-          touchControls: true,
-          gyroControls: false,
           minHeight: 200.0,
           minWidth: 200.0,
-          scale: 1.0,
-          scaleMobile: 1.0,
-          shininess: 74.0,
-          waveHeight: 27.5,
-          waveSpeed: 0.55,
-          zoom: 0.85,
+          ...vantaConfig,
         });
+      } else if (shouldReduceEffects.value) {
+        // 低效能裝置使用簡單背景色
+        vantaRef.value.style.background =
+          "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)";
+        console.log("使用簡化背景以提升效能");
       }
 
-      // 初始化 3D 船舶模型
-      setTimeout(() => {
-        initShipModel();
-      }, 100);
+      // 根據裝置效能決定是否載入 3D 船舶模型
+      if (!isLowPerformanceDevice.value) {
+        setTimeout(() => {
+          initShipModel();
+        }, 100);
+      } else {
+        // 低效能裝置顯示簡單的船舶圖片
+        if (shipModelRef.value) {
+          shipModelRef.value.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: rgba(255,255,255,0.1); border-radius: 8px;">
+              <i class="fas fa-ship" style="font-size: 4rem; color: #00bcd4;"></i>
+            </div>
+          `;
+        }
+        console.log("使用簡化船舶圖示以提升效能");
+      }
 
       // 添加視窗大小變化監聽器
       window.addEventListener("resize", handleResize);
@@ -860,6 +920,8 @@ export default {
       currentAlertIndex,
       weatherData,
       currentWeatherIndex,
+      isLowPerformanceDevice,
+      shouldReduceEffects,
       vantaRef,
       shipModelRef,
       getRowClass,
@@ -1106,8 +1168,8 @@ header h1 {
     rgba(255, 255, 255, 0.15) 100%
   );
 
-  /* 進階玻璃效果 */
-  backdrop-filter: blur(25px) saturate(200%) brightness(110%);
+  /* 簡化玻璃效果減少 GPU 負擔 */
+  backdrop-filter: blur(10px);
   border-radius: 24px;
   padding: 1.5rem;
 
@@ -1127,31 +1189,18 @@ header h1 {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Hover 互動效果 */
+/* 簡化 Hover 互動效果減少 GPU 負擔 */
 .weather-card:hover {
-  transform: translateY(-4px) scale(1.02);
-  backdrop-filter: blur(30px) saturate(220%) brightness(120%);
-  border-color: rgba(255, 255, 255, 0.6);
-  box-shadow: 
-    /* 加強外層光暈 */ 0 16px 48px rgba(31, 38, 135, 0.4),
-    0 24px 80px rgba(31, 38, 135, 0.2),
-    /* 內層高光增強 */ inset 0 1px 2px rgba(255, 255, 255, 0.8),
-    inset 0 -1px 2px rgba(255, 255, 255, 0.2),
-    /* 側邊光效增強 */ inset 2px 0 2px rgba(255, 255, 255, 0.4),
-    inset -2px 0 2px rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px); /* 減少變形效果 */
+  border-color: rgba(255, 255, 255, 0.5);
+  /* 移除複雜的 backdrop-filter 和 box-shadow 效果 */
 }
 
-.weather-card:hover::before {
-  opacity: 1;
-}
+/* 移除複雜的 hover 動畫效果 */
 
-.weather-card:hover::after {
-  left: 100%;
-}
-
-/* 點擊漣漪效果 */
+/* 簡化點擊效果 */
 .weather-card:active {
-  transform: translateY(-2px) scale(0.98);
+  transform: translateY(0);
   transition: all 0.1s ease-out;
 }
 
@@ -1163,18 +1212,10 @@ header h1 {
 
 /* 效能優化 */
 .weather-card {
-  /* GPU 加速 */
-  will-change: transform, backdrop-filter;
-  transform: translateZ(0);
-
-  /* 瀏覽器兼容性 */
-  -webkit-backdrop-filter: blur(25px) saturate(200%) brightness(110%);
-  -moz-backdrop-filter: blur(25px) saturate(200%) brightness(110%);
-}
-
-.weather-card:hover {
-  -webkit-backdrop-filter: blur(30px) saturate(220%) brightness(120%);
-  -moz-backdrop-filter: blur(30px) saturate(220%) brightness(120%);
+  /* 移除 will-change 減少 GPU 圖層創建 */
+  /* 簡化瀏覽器兼容性設定 */
+  -webkit-backdrop-filter: blur(10px);
+  -moz-backdrop-filter: blur(10px);
 }
 
 /* 降級支援：無 backdrop-filter 的瀏覽器 */
@@ -1191,45 +1232,7 @@ header h1 {
   }
 }
 
-/* 動態光效和反射 */
-.weather-card::before {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(
-    circle at 30% 30%,
-    rgba(255, 255, 255, 0.3) 0%,
-    rgba(255, 255, 255, 0.1) 25%,
-    transparent 50%
-  );
-  opacity: 0;
-  transform: rotate(45deg);
-  transition: opacity 0.6s ease;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.weather-card::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.6),
-    transparent
-  );
-  transform: skewX(-15deg);
-  transition: left 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-  pointer-events: none;
-  z-index: 2;
-}
+/* 移除動態光效減少 GPU 負擔 */
 
 .weather-item {
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
