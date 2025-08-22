@@ -355,12 +355,12 @@ export default {
 
     const getRowClass = (comfort) => {
       switch (comfort) {
-        case "大力搖晃":
+        case "劇烈搖晃":
           return "severe";
         case "搖晃":
           return "moderate";
         case "些微搖晃":
-          return "mild";
+        case "舒適":
         default:
           return "";
       }
