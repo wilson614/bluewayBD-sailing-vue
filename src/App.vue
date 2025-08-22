@@ -8,7 +8,9 @@
       class="w-full h-full flex flex-col relative text-white overflow-hidden bg-transparent main-container"
     >
       <header class="flex justify-between items-center py-2 px-8">
-        <h1>布袋港 藍色公路氣象台</h1>
+        <div class="flex flex-col">
+          <h1>布袋港 藍色公路氣象台</h1>
+        </div>
         <div class="datetime-display flex flex-col items-end">
           <div class="date-weekday text-xl text-gray-300">
             {{ currentDate }} {{ currentWeekday }}
@@ -17,24 +19,46 @@
         </div>
       </header>
 
-      <main class="flex-1 grid grid-cols-3 gap-8 px-6 min-h-0 main-content">
+      <main class="flex-1 grid gap-8 px-6 min-h-0 main-content">
         <!-- 左側區塊：船班時刻表 + 3D 模型 + Footer -->
         <section class="col-span-2 flex flex-col gap-8">
           <!-- 船班時刻表 -->
-          <div class="flex flex-col ferry-schedule p-6">
+          <div class="flex flex-col card-ferry ferry-schedule p-6">
+            <!-- 船班標題與分頁指示器 -->
+            <div class="flex justify-between items-center mb-4">
+              <div class="flex items-center gap-4">
+                <h3>航班資訊</h3>
+                <div class="text-gray-300">資訊更新時間：{{ currentTime }}</div>
+              </div>
+              <div
+                class="schedule-page-indicators"
+                v-if="getTotalSchedulePages() > 1"
+              >
+                <div
+                  v-for="page in getTotalSchedulePages()"
+                  :key="page"
+                  class="schedule-page-indicator"
+                  :class="{ active: currentSchedulePage === page - 1 }"
+                ></div>
+              </div>
+            </div>
+
             <div class="schedule-header">
               <div>預定出發</div>
               <div>船名</div>
               <div>碼頭</div>
               <div>預定抵達</div>
+              <div>馬公天氣</div>
               <div>海氣象預報</div>
               <div>航行舒適度</div>
               <div>開航狀態</div>
             </div>
 
-            <div class="flex flex-col items-center gap-2">
+            <div
+              class="flex flex-col items-center gap-2 ferry-schedules-container"
+            >
               <div
-                v-for="schedule in schedules"
+                v-for="schedule in getCurrentPageSchedules()"
                 :key="schedule.id"
                 class="ferry-row"
                 :class="getRowClass(schedule.comfort)"
@@ -51,6 +75,18 @@
                 <div>
                   <h5>{{ schedule.arrival }}</h5>
                 </div>
+                <div class="flex flex-col items-center text-sm">
+                  <div>
+                    溫度
+                    <b>{{ getWeatherByTime(schedule.arrival).temperature }}</b
+                    >°C
+                  </div>
+                  <div>
+                    降雨
+                    <b>{{ getWeatherByTime(schedule.arrival).rainChance }}</b
+                    >%
+                  </div>
+                </div>
                 <div class="flex flex-col items-center">
                   <div>
                     風力 <b class="px-1"> {{ schedule.windLevel }} </b>
@@ -60,10 +96,10 @@
                     浪高<b class="px-1">{{ schedule.waveHeight }}</b>
                     <small>m</small>
                   </div>
-                  <!-- <div>
+                  <div>
                     能見度<b class="px-1">{{ schedule.visibility }}</b>
                     <small>km</small>
-                  </div> -->
+                  </div>
                 </div>
                 <div class="flex items-center justify-center">
                   <div
@@ -88,15 +124,14 @@
             </div>
           </div>
 
-          <!-- 底部區塊：3D 模型 + Footer -->
-          <div class="flex flex-col gap-8">
-            <!-- Footer 資訊 -->
-            <div class="weather-card ship-model-card">
-              <div class="flex gap-4 items-center">
-                <!-- 3D 船舶模型 -->
+          <!-- 底部區塊：3D 模型 + 貼心提醒 -->
+          <div class="flex gap-8">
+            <!-- 3D 模型區塊 -->
+            <div class="card-ferry basis-1/2 p-6">
+              <div class="flex gap-4 justify-center items-center h-full">
                 <div
                   ref="shipModelRef"
-                  class="ship-model-container flex-none h-full"
+                  class="ship-model-container flex-none"
                 ></div>
                 <div class="text-center flex-1">
                   <h4>請隨時注意現場廣播與看板</h4>
@@ -104,131 +139,55 @@
                 </div>
               </div>
             </div>
+            <!-- 貼心提醒區塊 -->
+            <div class="card-ferry basis-1/2 flex flex-col gap-2 p-6">
+              <div
+                class="weather-title flex items-center justify-between gap-2"
+              >
+                <div class="flex items-center gap-2">
+                  <i
+                    class="fas fa-exclamation-triangle fa-fw fa-lg text-yellow-400"
+                  ></i>
+                  <h4 class="inline-block">貼心提醒</h4>
+                </div>
+                <div class="carousel-indicators">
+                  <div
+                    v-for="page in getTotalAlertPages()"
+                    :key="page"
+                    class="indicator"
+                    :class="{ active: getCurrentAlertPage() === page - 1 }"
+                  ></div>
+                </div>
+              </div>
+              <div class="alert-carousel">
+                <div class="alert-slide" :class="{ 'slide-active': true }">
+                  <div class="alert-item">
+                    <i :class="alerts[currentAlertIndex].icon + ' me-2'"></i>
+                    <span>{{ alerts[currentAlertIndex].message }}</span>
+                  </div>
+                  <div
+                    class="alert-item"
+                    v-if="alerts[(currentAlertIndex + 1) % alerts.length]"
+                  >
+                    <i
+                      :class="
+                        alerts[(currentAlertIndex + 1) % alerts.length].icon +
+                        ' me-2'
+                      "
+                    ></i>
+                    <span>{{
+                      alerts[(currentAlertIndex + 1) % alerts.length].message
+                    }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        <!-- 右側資訊面板 -->
+        <!-- 右側資訊面板（預留空間） -->
         <aside class="flex flex-col gap-8">
-          <!-- 馬公天氣 -->
-          <div class="weather-card flex flex-col gap-2">
-            <div class="weather-title flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2">
-                <i class="fas fa-cloud fa-fw fa-lg text-neutral-100"></i>
-                <h4 class="inline-block">馬公天氣</h4>
-                <div class="weather-time-indicator-inline ml-4">
-                  <p class="text-sky-200 font-bold inline-block">
-                    {{ weatherData[currentWeatherIndex].title }}
-                  </p>
-                </div>
-              </div>
-              <div class="weather-carousel-indicators">
-                <div
-                  v-for="(weather, index) in weatherData"
-                  :key="weather.id"
-                  class="weather-indicator"
-                  :class="{ active: currentWeatherIndex === index }"
-                ></div>
-              </div>
-            </div>
-            <div class="weather-carousel">
-              <div class="weather-content">
-                <div class="weather-item flex items-center justify-between">
-                  <div class="flex items-center gap-4">
-                    <i
-                      class="fas fa-temperature-low fa-fw fa-sm text-pink-300"
-                    ></i>
-                    <h5 class="inline-block">溫度</h5>
-                  </div>
-                  <div>
-                    <b>{{ weatherData[currentWeatherIndex].temperature }}</b
-                    ><span class="text-xl ms-4">°C</span>
-                  </div>
-                </div>
-                <div class="weather-item flex items-center justify-between">
-                  <div class="flex items-center gap-4">
-                    <i class="fas fa-tint weather-icon fa-fw text-sky-200"></i>
-                    <h5 class="inline-block">降雨機率</h5>
-                  </div>
-                  <div>
-                    <b>{{ weatherData[currentWeatherIndex].rainChance }}</b
-                    ><span class="text-xl ms-4">%</span>
-                  </div>
-                </div>
-                <div class="weather-item flex items-center justify-between">
-                  <div class="flex items-center gap-4">
-                    <i class="fas fa-eye weather-icon fa-fw text-teal-400"></i>
-                    <h5 class="inline-block">能見度</h5>
-                  </div>
-                  <div>
-                    <b>{{ weatherData[currentWeatherIndex].visibility }}</b
-                    ><span class="text-xl ms-4">km</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 貼心提醒輪播 -->
-          <div class="weather-card alerts flex flex-col gap-2">
-            <div class="weather-title flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2 mb-4">
-                <i
-                  class="fas fa-exclamation-triangle fa-fw fa-lg text-yellow-400"
-                ></i>
-                <h4 class="inline-block">貼心提醒</h4>
-              </div>
-              <div class="carousel-indicators">
-                <div
-                  v-for="(alert, index) in alerts"
-                  :key="alert.id"
-                  class="indicator"
-                  :class="{ active: currentAlertIndex === index }"
-                ></div>
-              </div>
-            </div>
-            <div class="alert-carousel">
-              <div class="alert-slide" :class="{ 'slide-active': true }">
-                <div class="alert-item">
-                  <i :class="alerts[currentAlertIndex].icon + ' me-2'"></i>
-                  <span>{{ alerts[currentAlertIndex].message }}</span>
-                </div>
-                <div
-                  class="alert-item"
-                  v-if="alerts[(currentAlertIndex + 1) % alerts.length]"
-                >
-                  <i
-                    :class="
-                      alerts[(currentAlertIndex + 1) % alerts.length].icon +
-                      ' me-2'
-                    "
-                  ></i>
-                  <span>{{
-                    alerts[(currentAlertIndex + 1) % alerts.length].message
-                  }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 明日預報 -->
-          <div class="weather-card tomorrow-forecast flex flex-col gap-6">
-            <div class="weather-title flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2">
-                <i class="fas fa-calendar-alt fa-fw fa-lg text-gray-200"></i>
-                <h4 class="inline-block">明日預報</h4>
-              </div>
-              <div class="forecast-date">8月9日(六)</div>
-            </div>
-            <div class="flex items-center justify-center gap-8">
-              <div>
-                <i class="fas fa-cloud-rain fa-3x text-blue-custom"></i>
-              </div>
-              <div>
-                <h4 class="inline-block">26~28</h4>
-                °C
-              </div>
-            </div>
-          </div>
+          <!-- 可在此添加其他資訊或廣告 -->
         </aside>
       </main>
     </div>
@@ -260,7 +219,7 @@ export default {
         windLevel: 7,
         waveHeight: "1.8",
         visibility: "1",
-        comfort: "大力搖晃",
+        comfort: "劇烈搖晃",
         status: "可能停航",
       },
       {
@@ -273,7 +232,7 @@ export default {
         waveHeight: "1.5",
         visibility: "3",
         comfort: "搖晃",
-        status: "開航",
+        status: "正常開航",
       },
       {
         id: 3,
@@ -285,7 +244,19 @@ export default {
         waveHeight: "1",
         visibility: "5",
         comfort: "些微搖晃",
-        status: "開航",
+        status: "正常開航",
+      },
+      {
+        id: 4,
+        departure: "16:00",
+        shipName: "布袋之星",
+        pier: "A1",
+        arrival: "17:20",
+        windLevel: 3,
+        waveHeight: "0.8",
+        visibility: "8",
+        comfort: "舒適",
+        status: "正常開航",
       },
     ]);
 
@@ -352,12 +323,16 @@ export default {
     // 當前顯示的天氣索引
     const currentWeatherIndex = ref(0);
 
+    // 船班輪播相關
+    const maxDisplaySchedules = 2; // 最多顯示 2 個航班
+    const currentSchedulePage = ref(0);
+
     // 效能監控
     const isLowPerformanceDevice = ref(false);
     const shouldReduceEffects = ref(false);
 
     // 3D Canvas 尺寸設定（統一管理）
-    const CANVAS_WIDTH = 250;
+    const CANVAS_WIDTH = 150;
     const CANVAS_HEIGHT = 150;
 
     const updateTime = () => {
@@ -393,12 +368,14 @@ export default {
 
     const getComfortClass = (comfort) => {
       switch (comfort) {
-        case "大力搖晃":
+        case "劇烈搖晃":
           return "comfort-severe";
         case "搖晃":
           return "comfort-moderate";
         case "些微搖晃":
           return "comfort-mild";
+        case "舒適":
+          return "comfort-comfortable";
         default:
           return "comfort-mild";
       }
@@ -566,14 +543,14 @@ export default {
                   }
 
                   // 如果有法線貼圖，也提升其品質
-                  if (child.material.normalMap) {
-                    child.material.normalMap.minFilter =
-                      window.THREE.LinearMipmapLinearFilter;
-                    child.material.normalMap.magFilter =
-                      window.THREE.LinearFilter;
-                    child.material.normalMap.anisotropy =
-                      shipRenderer.capabilities.getMaxAnisotropy();
-                  }
+                  // if (child.material.normalMap) {
+                  //   child.material.normalMap.minFilter =
+                  //     window.THREE.LinearMipmapLinearFilter;
+                  //   child.material.normalMap.magFilter =
+                  //     window.THREE.LinearFilter;
+                  //   child.material.normalMap.anisotropy =
+                  //     shipRenderer.capabilities.getMaxAnisotropy();
+                  // }
 
                   // 標記材質需要更新
                   child.material.needsUpdate = true;
@@ -614,7 +591,7 @@ export default {
               requestAnimationFrame(animateModel);
 
               // 限制到 30 FPS 減少 GPU 負擔
-              if (currentTime - lastTime > 33) {
+              if (currentTime - lastTime > 20) {
                 model.rotation.y += 0.015; // 更慢的旋轉速度
                 shipRenderer.render(shipScene, camera);
                 lastTime = currentTime;
@@ -668,14 +645,14 @@ export default {
                       }
 
                       // 如果有法線貼圖，也提升其品質
-                      if (child.material.normalMap) {
-                        child.material.normalMap.minFilter =
-                          window.THREE.LinearMipmapLinearFilter;
-                        child.material.normalMap.magFilter =
-                          window.THREE.LinearFilter;
-                        child.material.normalMap.anisotropy =
-                          shipRenderer.capabilities.getMaxAnisotropy();
-                      }
+                      // if (child.material.normalMap) {
+                      //   child.material.normalMap.minFilter =
+                      //     window.THREE.LinearMipmapLinearFilter;
+                      //   child.material.normalMap.magFilter =
+                      //     window.THREE.LinearFilter;
+                      //   child.material.normalMap.anisotropy =
+                      //     shipRenderer.capabilities.getMaxAnisotropy();
+                      // }
 
                       // 標記材質需要更新
                       child.material.needsUpdate = true;
@@ -706,7 +683,7 @@ export default {
                   requestAnimationFrame(animateModel);
 
                   // 限制到 30 FPS 減少 GPU 負擔
-                  if (currentTime - lastTime > 33) {
+                  if (currentTime - lastTime > 20) {
                     object.rotation.y += 0.003; // 更慢的旋轉速度
                     shipRenderer.render(shipScene, camera);
                     lastTime = currentTime;
@@ -757,6 +734,16 @@ export default {
         (currentAlertIndex.value + 2) % alerts.value.length;
     };
 
+    // 計算貼心提醒總頁數（每頁顯示2個項目）
+    const getTotalAlertPages = () => {
+      return Math.ceil(alerts.value.length / 2);
+    };
+
+    // 獲取當前貼心提醒頁面索引（基於 currentAlertIndex）
+    const getCurrentAlertPage = () => {
+      return Math.floor(currentAlertIndex.value / 2);
+    };
+
     // 天氣輪播自動切換功能
     const nextWeather = () => {
       currentWeatherIndex.value =
@@ -768,6 +755,36 @@ export default {
       // 直接按照順序輪播天氣資訊
       currentWeatherIndex.value =
         (currentWeatherIndex.value + 1) % weatherData.value.length;
+    };
+
+    // 根據抵達時間獲取對應的天氣資料
+    const getWeatherByTime = (arrivalTime) => {
+      const weather = weatherData.value.find(
+        (w) => w.arrivalTime === arrivalTime
+      );
+      return weather || { temperature: "25~27", rainChance: 70 };
+    };
+
+    // 獲取當前頁面要顯示的船班
+    const getCurrentPageSchedules = () => {
+      const startIndex = currentSchedulePage.value * maxDisplaySchedules;
+      return schedules.value.slice(
+        startIndex,
+        startIndex + maxDisplaySchedules
+      );
+    };
+
+    // 船班輪播控制
+    const nextSchedulePage = () => {
+      const totalPages = Math.ceil(
+        schedules.value.length / maxDisplaySchedules
+      );
+      currentSchedulePage.value = (currentSchedulePage.value + 1) % totalPages;
+    };
+
+    // 計算總頁數
+    const getTotalSchedulePages = () => {
+      return Math.ceil(schedules.value.length / maxDisplaySchedules);
     };
 
     // 效能檢測函數
@@ -803,26 +820,28 @@ export default {
           mouseControls: false,
           touchControls: false,
           gyroControls: false,
-          scale: 0.3,
-          scaleMobile: 0.2,
+          scale: 0.1,
+          scaleMobile: 0.05,
           shininess: 10.0,
           waveHeight: 8.0,
           waveSpeed: 0.1,
-          zoom: 2.0,
+          zoom: 1.5,
           forceAnimate: false,
+          color: 0x00264c,
         };
       } else {
         return {
           mouseControls: false,
           touchControls: false,
           gyroControls: false,
-          scale: 0.7,
-          scaleMobile: 0.5,
-          shininess: 30.0,
-          waveHeight: 15.0,
+          scale: 0.4,
+          scaleMobile: 0.25,
+          shininess: 20.0,
+          waveHeight: 10.0,
           waveSpeed: 0.3,
           zoom: 1.2,
           forceAnimate: false,
+          color: 0x00264c,
         };
       }
     };
@@ -830,6 +849,7 @@ export default {
     let timeInterval;
     let carouselInterval;
     let weatherCarouselInterval;
+    let scheduleCarouselInterval;
 
     onMounted(() => {
       updateTime();
@@ -881,6 +901,11 @@ export default {
       // 啟動天氣輪播自動切換（每 5 秒切換一次）
       weatherCarouselInterval = setInterval(nextWeather, 5000);
 
+      // 啟動船班輪播自動切換（只在超過2個船班時啟動，每8秒切換一次）
+      if (schedules.value.length > maxDisplaySchedules) {
+        scheduleCarouselInterval = setInterval(nextSchedulePage, 8000);
+      }
+
       // 添加緊急狀態閃爍效果
       setInterval(() => {
         const urgentElements = document.querySelectorAll(".urgent");
@@ -899,6 +924,9 @@ export default {
       }
       if (weatherCarouselInterval) {
         clearInterval(weatherCarouselInterval);
+      }
+      if (scheduleCarouselInterval) {
+        clearInterval(scheduleCarouselInterval);
       }
       if (vantaEffect) {
         vantaEffect.destroy();
@@ -927,6 +955,12 @@ export default {
       getRowClass,
       getComfortClass,
       getStatusClass,
+      getWeatherByTime,
+      getCurrentPageSchedules,
+      getTotalSchedulePages,
+      currentSchedulePage,
+      getTotalAlertPages,
+      getCurrentAlertPage,
     };
   },
 };
@@ -969,7 +1003,7 @@ body {
     rgba(255, 255, 255, 0.05) 50%,
     rgba(255, 255, 255, 0.02) 100%
   );
-  backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(1px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
@@ -1018,20 +1052,30 @@ header h1 {
 
 /* main-content 現在使用 Tailwind utilities */
 
-.ferry-schedule {
+.card-ferry {
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.1) 0%,
     rgba(255, 255, 255, 0.05) 50%,
     rgba(255, 255, 255, 0.02) 100%
   );
-  backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(1px);
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  overflow-y: auto;
-  position: relative;
+  overflow-y: hidden;
+  /* position: relative;
+  min-height: 400px; */
+}
+
+.ferry-schedule {
+  min-height: 400px;
+}
+
+.ferry-schedules-container {
+  min-height: 280px;
+  height: auto;
 }
 
 .ferry-schedule::before {
@@ -1052,10 +1096,10 @@ header h1 {
 
 .schedule-header {
   display: grid;
-  grid-template-columns: 1fr 1.5fr 0.8fr 1fr 2fr 1.5fr 1.2fr;
+  grid-template-columns: 1fr 1.5fr 0.8fr 1fr 1.2fr 1.8fr 1.5fr 1.2fr;
   gap: 1vw;
   background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(0.5px);
   padding: 1.5vh 1vw;
   border-radius: 8px;
   margin-bottom: 1.5vh;
@@ -1066,11 +1110,11 @@ header h1 {
 
 .ferry-row {
   display: grid;
-  grid-template-columns: 1fr 1.5fr 0.8fr 1fr 2fr 1.5fr 1.2fr;
+  grid-template-columns: 1fr 1.5fr 0.8fr 1fr 1.2fr 1.8fr 1.5fr 1.2fr;
   gap: 1vw;
   padding: 2vh 1vw;
   background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(0.5px);
   border-radius: 8px;
   align-items: center;
   border-left: 4px solid transparent;
@@ -1105,11 +1149,7 @@ header h1 {
   text-align: center;
 } */
 
-.weather-detail {
-  font-size: 1.25rem; /* 20px = 1.25rem */
-  opacity: 0.8;
-  margin-top: 0.5vh;
-}
+/* 已移除未使用的 weather-detail 樣式 */
 
 .comfort-level {
   padding: 1rem;
@@ -1137,6 +1177,12 @@ header h1 {
   box-shadow: 0 2px 8px rgba(33, 150, 243, 0.5);
 }
 
+.comfort-comfortable {
+  background: #4caf50;
+  color: white;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.5);
+}
+
 .status {
   padding: 1vh 1.5vw;
   border-radius: 20px;
@@ -1157,115 +1203,6 @@ header h1 {
   box-shadow: 0 2px 8px rgba(76, 175, 80, 0.5);
 }
 
-.weather-card {
-  /* Liquid Glass 主要效果 */
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.15) 0%,
-    rgba(255, 255, 255, 0.08) 25%,
-    rgba(255, 255, 255, 0.05) 50%,
-    rgba(255, 255, 255, 0.08) 75%,
-    rgba(255, 255, 255, 0.15) 100%
-  );
-
-  /* 簡化玻璃效果減少 GPU 負擔 */
-  backdrop-filter: blur(10px);
-  border-radius: 24px;
-  padding: 1.5rem;
-
-  /* 多層邊框效果 */
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 
-    /* 外層光暈 */ 0 8px 32px rgba(31, 38, 135, 0.3),
-    0 16px 64px rgba(31, 38, 135, 0.15),
-    /* 內層高光 */ inset 0 1px 1px rgba(255, 255, 255, 0.6),
-    inset 0 -1px 1px rgba(255, 255, 255, 0.1),
-    /* 側邊光效 */ inset 1px 0 1px rgba(255, 255, 255, 0.3),
-    inset -1px 0 1px rgba(255, 255, 255, 0.3);
-
-  overflow: hidden;
-
-  /* 動畫過渡 */
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 簡化 Hover 互動效果減少 GPU 負擔 */
-.weather-card:hover {
-  transform: translateY(-2px); /* 減少變形效果 */
-  border-color: rgba(255, 255, 255, 0.5);
-  /* 移除複雜的 backdrop-filter 和 box-shadow 效果 */
-}
-
-/* 移除複雜的 hover 動畫效果 */
-
-/* 簡化點擊效果 */
-.weather-card:active {
-  transform: translateY(0);
-  transition: all 0.1s ease-out;
-}
-
-/* 額外的光澤層 */
-.weather-card .card-content {
-  position: relative;
-  z-index: 10;
-}
-
-/* 效能優化 */
-.weather-card {
-  /* 移除 will-change 減少 GPU 圖層創建 */
-  /* 簡化瀏覽器兼容性設定 */
-  -webkit-backdrop-filter: blur(10px);
-  -moz-backdrop-filter: blur(10px);
-}
-
-/* 降級支援：無 backdrop-filter 的瀏覽器 */
-@supports not (backdrop-filter: blur(1px)) {
-  .weather-card {
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.25) 0%,
-      rgba(255, 255, 255, 0.15) 50%,
-      rgba(255, 255, 255, 0.25) 100%
-    );
-    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.5),
-      inset 0 1px 1px rgba(255, 255, 255, 0.8);
-  }
-}
-
-/* 移除動態光效減少 GPU 負擔 */
-
-.weather-item {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  font-size: 2rem; /* 32px = 2rem - H5 級別 */
-  position: relative;
-  z-index: 10;
-}
-
-.weather-item:last-child {
-  border-bottom: none;
-}
-
-.weather-icon {
-  font-size: 1.5rem; /* 24px = 1.5rem - H6 級別 */
-  margin-right: 8px;
-}
-
-.tomorrow-forecast {
-  background: rgba(33, 150, 243, 0.3);
-  border: 1px solid rgba(33, 150, 243, 0.5);
-  text-align: center;
-}
-
-.forecast-date {
-  color: #81d4fa;
-  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
-}
-
-.alerts {
-  background: rgba(244, 67, 54, 0.3);
-  border: 1px solid rgba(244, 67, 54, 0.5);
-}
-
 /* 輪播容器 */
 .alert-carousel {
   position: relative;
@@ -1274,16 +1211,7 @@ header h1 {
   overflow: hidden;
 }
 
-/* 天氣輪播容器 */
-.weather-carousel {
-  min-height: 15vh;
-  height: auto;
-}
-
-/* 天氣內容 */
-.weather-content {
-  transition: all 0.3s ease;
-}
+/* 已移除未使用的天氣輪播樣式 */
 
 /* 輪播指示器 */
 .carousel-indicators {
@@ -1305,24 +1233,30 @@ header h1 {
   box-shadow: 0 0 8px rgba(255, 235, 59, 0.6);
 }
 
-/* 天氣輪播指示器 */
-.weather-carousel-indicators {
+/* 已移除未使用的天氣指示器樣式 */
+
+/* 船班分頁指示器 */
+.schedule-page-indicators {
   display: flex;
-  gap: 6px;
+  gap: 8px;
+  align-items: center;
 }
 
-.weather-indicator {
-  width: 8px;
-  height: 8px;
+.schedule-page-indicator {
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.3);
   transition: all 0.3s ease;
   cursor: pointer;
+  border: 2px solid transparent;
 }
 
-.weather-indicator.active {
-  background: #00bcd4;
-  box-shadow: 0 0 8px rgba(0, 188, 212, 0.6);
+.schedule-page-indicator.active {
+  background: #ffc107;
+  border-color: rgba(255, 193, 7, 0.5);
+  box-shadow: 0 0 12px rgba(255, 193, 7, 0.8);
+  transform: scale(1.2);
 }
 
 /* 輪播幻燈片 */
@@ -1350,72 +1284,17 @@ header h1 {
   display: flex;
   align-items: center;
   padding: 0.25rem 1rem;
-  background: rgba(244, 67, 54, 0.2);
+  background: rgba(255, 193, 7, 0.2);
   border-radius: 8px;
-  border-left: 4px solid #f44336;
+  border-left: 4px solid #ffc107;
   font-size: 1.25rem; /* 24px = 1.5rem - H6 級別 */
   margin-bottom: 0;
   flex: 1; /* 讓兩個項目平均分配空間 */
 }
 
-/* 天氣幻燈片 */
-.weather-slide {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  transform: translateX(100%);
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
+/* 已移除未使用的天氣幻燈片樣式 */
 
-.weather-slide.slide-active {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-/* 天氣時間指示器 */
-.weather-time-indicator {
-  padding: 0.5rem;
-  background: rgba(0, 188, 212, 0.2);
-  border-radius: 8px;
-  border: 1px solid rgba(0, 188, 212, 0.4);
-  margin-bottom: 1rem;
-}
-
-.footer {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(255, 255, 255, 0.05) 50%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
-  backdrop-filter: blur(20px) saturate(180%);
-  border-top: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 -8px 32px rgba(31, 38, 135, 0.37),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  position: relative;
-}
-
-.footer::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
-}
-
-.mascot {
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
-}
+/* 已移除未使用的 footer 和 mascot 樣式 */
 
 @keyframes pulse {
   0%,
@@ -1437,12 +1316,5 @@ header h1 {
   background: transparent; /* 完全透明背景 */
 }
 
-/* Footer 資訊卡片樣式 */
-
-.footer-info .footer-text {
-  font-size: 2rem; /* 32px = 2rem - H5 級別 */
-  color: #ffeb3b;
-  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
-  line-height: 1.5;
-}
+/* 已移除未使用的 footer 資訊樣式 */
 </style>
