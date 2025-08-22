@@ -43,7 +43,7 @@
               </div>
             </div>
 
-            <div class="schedule-header">
+            <div class="grid-ferry schedule-header">
               <div>預定出發</div>
               <div>船名</div>
               <div>碼頭</div>
@@ -60,14 +60,14 @@
               <div
                 v-for="schedule in getCurrentPageSchedules()"
                 :key="schedule.id"
-                class="ferry-row"
+                class="grid-ferry ferry-row py-4"
                 :class="getRowClass(schedule.comfort)"
               >
                 <div>
-                  <h4>{{ schedule.departure }}</h4>
+                  <h3>{{ schedule.departure }}</h3>
                 </div>
                 <div>
-                  <h5>{{ schedule.shipName }}</h5>
+                  <h4>{{ schedule.shipName }}</h4>
                 </div>
                 <div>
                   <h4>{{ schedule.pier }}</h4>
@@ -75,29 +75,36 @@
                 <div>
                   <h5>{{ schedule.arrival }}</h5>
                 </div>
-                <div class="flex flex-col items-center text-sm">
-                  <div>
-                    溫度
-                    <b>{{ getWeatherByTime(schedule.arrival).temperature }}</b
-                    >°C
+                <div class="grid grid-cols-3 gap-1">
+                  <div class="text-xl">溫度</div>
+                  <div class="col-span-2">
+                    <b class="text-3xl me-2">{{
+                      getWeatherByTime(schedule.arrival).temperature
+                    }}</b>
+                    <small>°C</small>
                   </div>
-                  <div>
-                    降雨
-                    <b>{{ getWeatherByTime(schedule.arrival).rainChance }}</b
-                    >%
+                  <div class="text-xl">降雨</div>
+                  <div class="col-span-2">
+                    <b class="text-3xl me-2">{{
+                      getWeatherByTime(schedule.arrival).rainChance
+                    }}</b>
+                    <small>%</small>
                   </div>
                 </div>
-                <div class="flex flex-col items-center">
-                  <div>
-                    風力 <b class="px-1"> {{ schedule.windLevel }} </b>
+                <div class="grid grid-cols-3 gap-1">
+                  <div class="text-xl">風力</div>
+                  <div class="col-span-2">
+                    <b class="text-3xl me-2">{{ schedule.windLevel }}</b>
                     <small>級</small>
                   </div>
-                  <div>
-                    浪高<b class="px-1">{{ schedule.waveHeight }}</b>
+                  <div class="text-xl">浪高</div>
+                  <div class="col-span-2">
+                    <b class="text-3xl me-2">{{ schedule.waveHeight }}</b>
                     <small>m</small>
                   </div>
-                  <div>
-                    能見度<b class="px-1">{{ schedule.visibility }}</b>
+                  <div class="text-xl">能見度</div>
+                  <div class="col-span-2">
+                    <b class="text-3xl me-2">{{ schedule.visibility }}</b>
                     <small>km</small>
                   </div>
                 </div>
@@ -213,7 +220,7 @@ export default {
       {
         id: 1,
         departure: "10:00",
-        shipName: "太吉之星",
+        shipName: "太吉之星一號",
         pier: "B1",
         arrival: "11:20",
         windLevel: 7,
@@ -820,8 +827,8 @@ export default {
           mouseControls: false,
           touchControls: false,
           gyroControls: false,
-          scale: 0.1,
-          scaleMobile: 0.05,
+          scale: 1.5,
+          scaleMobile: 1.5,
           shininess: 10.0,
           waveHeight: 8.0,
           waveSpeed: 0.1,
@@ -834,11 +841,11 @@ export default {
           mouseControls: false,
           touchControls: false,
           gyroControls: false,
-          scale: 0.4,
-          scaleMobile: 0.25,
-          shininess: 20.0,
+          scale: 1.5,
+          scaleMobile: 1.5,
+          shininess: 10.0,
           waveHeight: 10.0,
-          waveSpeed: 0.3,
+          waveSpeed: 0.1,
           zoom: 1.2,
           forceAnimate: false,
           color: 0x00264c,
@@ -864,8 +871,8 @@ export default {
         vantaEffect = window.VANTA.WAVES({
           el: vantaRef.value,
           THREE: window.THREE,
-          minHeight: 200.0,
-          minWidth: 200.0,
+          minHeight: 100.0,
+          minWidth: 100.0,
           ...vantaConfig,
         });
       } else if (shouldReduceEffects.value) {
@@ -996,35 +1003,6 @@ body {
   font-size: 1.5rem; /* 24px = 1.5rem - H6 級別作為基礎字體 */
 }
 
-.header {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(255, 255, 255, 0.05) 50%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
-  backdrop-filter: blur(1px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  position: relative;
-}
-
-.header::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
-}
-
 header h1 {
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
 }
@@ -1062,7 +1040,7 @@ header h1 {
   backdrop-filter: blur(1px);
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37),
+  box-shadow: 0 8px 8px rgba(31, 38, 135, 0.37),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   overflow-y: hidden;
   /* position: relative;
@@ -1094,48 +1072,86 @@ header h1 {
   border-radius: 20px 20px 0 0;
 }
 
-.schedule-header {
+.grid-ferry {
   display: grid;
-  grid-template-columns: 1fr 1.5fr 0.8fr 1fr 1.2fr 1.8fr 1.5fr 1.2fr;
-  gap: 1vw;
-  background: rgba(255, 255, 255, 0.15);
+  grid-template-columns: 1fr 1.25fr 0.8fr 0.8fr 1.2fr 1.5fr 0.8fr 1fr;
+}
+
+.schedule-header {
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(0.5px);
-  padding: 1.5vh 1vw;
+  padding: 0.5rem;
   border-radius: 8px;
-  margin-bottom: 1.5vh;
-  font-weight: bold;
-  font-size: 1.25rem; /* 32px = 2rem - H5 級別 */
+  margin-bottom: 1rem;
+  font-weight: 500;
+  font-size: 1.5rem;
   text-align: center;
+  text-shadow: 1px 1px 3px rgba(6, 1, 52, 0.7);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.schedule-header > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ferry-row {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr 0.8fr 1fr 1.2fr 1.8fr 1.5fr 1.2fr;
-  gap: 1vw;
-  padding: 2vh 1vw;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(0.5px);
   border-radius: 8px;
   align-items: center;
   border-left: 4px solid transparent;
   transition: all 0.3s ease;
-  font-size: 1.5rem; /* 24px = 1.5rem - H6 級別 */
+  font-size: 1.5rem;
   width: 100%;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+}
+
+.ferry-row > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.ferry-row > div.grid {
+  display: grid;
+}
+
+.weather-grid {
+  align-items: center;
+  justify-content: center;
+}
+
+.weather-grid > div:nth-child(odd) {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.weather-grid > div:nth-child(even) {
+  font-weight: bold;
+  margin-right: 1rem;
 }
 
 .ferry-row:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
   transform: translateX(5px);
 }
 
 .ferry-row.severe {
   border-left-color: #f44336;
-  background: rgba(244, 67, 54, 0.2);
+  background: rgba(244, 67, 54, 0.3);
+  color: #ffffff;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
 }
 
 .ferry-row.moderate {
   border-left-color: #ff9800;
-  background: rgba(255, 152, 0, 0.2);
+  background: rgba(255, 152, 0, 0.3);
+  color: #ffffff;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
 }
 
 .ferry-row.mild {
