@@ -116,7 +116,7 @@
                     </div>
                     <!-- 溫度資訊 -->
                     <div class="text-center">
-                      <b class="text-3xl">{{
+                      <b class="text-3xl me-2">{{
                         getWeatherByTime(schedule.arrival).temperature
                       }}</b>
                       <small>°C</small>
