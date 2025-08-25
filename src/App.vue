@@ -378,21 +378,39 @@ export default {
     const CANVAS_HEIGHT = 150;
 
     const updateTime = () => {
+      // 使用台灣時區 (UTC+8)
       const now = new Date();
-      const hours = now.getHours().toString().padStart(2, "0");
-      const minutes = now.getMinutes().toString().padStart(2, "0");
-      currentTime.value = `${hours}:${minutes}`;
-
-      // 更新日期
-      const year = now.getFullYear();
-      const month = (now.getMonth() + 1).toString().padStart(2, "0");
-      const day = now.getDate().toString().padStart(2, "0");
-      currentDate.value = `${year}/${month}/${day}`;
-
-      // 更新星期幾
-      const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
-      const weekday = weekdays[now.getDay()];
-      currentWeekday.value = `星期${weekday}`;
+      
+      // 使用 toLocaleString 直接格式化為台灣時間
+      const timeOptions = {
+        timeZone: 'Asia/Taipei',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      };
+      
+      const dateOptions = {
+        timeZone: 'Asia/Taipei',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      };
+      
+      const weekdayOptions = {
+        timeZone: 'Asia/Taipei',
+        weekday: 'long'
+      };
+      
+      // 格式化時間
+      currentTime.value = now.toLocaleString('zh-TW', timeOptions);
+      
+      // 格式化日期
+      const dateStr = now.toLocaleString('zh-TW', dateOptions);
+      currentDate.value = dateStr.replace(/\//g, '/'); // 確保格式一致
+      
+      // 格式化星期
+      const weekdayStr = now.toLocaleString('zh-TW', weekdayOptions);
+      currentWeekday.value = weekdayStr;
     };
 
     const getRowClass = (comfort) => {
@@ -900,7 +918,8 @@ export default {
 
     onMounted(() => {
       updateTime();
-      timeInterval = setInterval(updateTime, 60000);
+      // 改為每秒更新確保時間準確
+      timeInterval = setInterval(updateTime, 1000);
 
       // 先進行效能檢測
       detectPerformance();
