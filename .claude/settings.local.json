@@ -4,7 +4,8 @@
       "Bash(curl:*)",
       "Bash(cd:*)",
       "Bash(git add:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\n清理重複的天氣圖示檔案和下載腳本\n\n主要修改內容：\n- 刪除 src/images/weather_icons/ 資料夾中的重複天氣圖示（42個檔案）\n- 移除 download_weather_icons.sh 下載腳本（已完成功能）\n- 保留 public/images/weather_icons/ 中的天氣圖示供正式環境使用\n- 優化專案結構，遵循 Vite 最佳實踐\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []
