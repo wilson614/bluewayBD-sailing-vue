@@ -1,5 +1,15 @@
 <template>
   <div class="app-wrapper">
+    <!-- 輪播背景圖片 -->
+    <div class="carousel-background">
+      <div 
+        v-for="(bg, index) in backgroundImages" 
+        :key="index"
+        class="background-slide"
+        :class="{ 'active': currentBackgroundIndex === index }"
+        :style="{ backgroundImage: `url(${bg})` }"
+      ></div>
+    </div>
     <!-- 主要內容 -->
     <div
       class="w-full h-full flex flex-col relative text-white overflow-hidden bg-transparent main-container"
@@ -220,6 +230,14 @@ export default {
     const shipModelRef = ref(null);
     let shipScene = null;
     let shipRenderer = null;
+
+    // 背景圖片輪播相關
+    const backgroundImages = ref([
+      '/images/bg-1.jpg',
+      '/images/bg-2.jpg',
+      '/images/bg-3.jpg'
+    ]);
+    const currentBackgroundIndex = ref(0);
 
     const schedules = ref([
       {
@@ -846,6 +864,12 @@ export default {
       }
     };
 
+    // 背景圖片自動切換功能
+    const nextBackground = () => {
+      currentBackgroundIndex.value = 
+        (currentBackgroundIndex.value + 1) % backgroundImages.value.length;
+    };
+
     // 計算貼心提醒總頁數（基於非嚴重等級的輪播）
     const getTotalAlertPages = () => {
       const nonSevereAlerts = getNonSevereAlerts();
@@ -945,6 +969,7 @@ export default {
     let carouselInterval;
     let weatherCarouselInterval;
     let scheduleCarouselInterval;
+    let backgroundInterval;
 
     onMounted(() => {
       updateTime();
@@ -954,6 +979,8 @@ export default {
       // 先進行效能檢測
       detectPerformance();
 
+      // 啟動背景圖片自動輪播（每30秒切換一次）
+      backgroundInterval = setInterval(nextBackground, 30000);
 
       // 根據裝置效能決定是否載入 3D 船舶模型
       if (!isLowPerformanceDevice.value) {
@@ -1008,6 +1035,9 @@ export default {
       if (scheduleCarouselInterval) {
         clearInterval(scheduleCarouselInterval);
       }
+      if (backgroundInterval) {
+        clearInterval(backgroundInterval);
+      }
       if (shipRenderer && shipModelRef.value) {
         shipModelRef.value.removeChild(shipRenderer.domElement);
         shipRenderer.dispose();
@@ -1027,6 +1057,8 @@ export default {
       currentWeatherIndex,
       isLowPerformanceDevice,
       shouldReduceEffects,
+      backgroundImages,
+      currentBackgroundIndex,
       shipModelRef,
       getRowClass,
       getComfortClass,
@@ -1062,6 +1094,51 @@ body {
   overflow: hidden;
 }
 
+/* 輪播背景圖片 */
+.carousel-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.background-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 2s ease-in-out;
+  transform: scale(1.05); /* 微微放大避免邊緣空白 */
+}
+
+.background-slide.active {
+  opacity: 1;
+}
+
+/* 為背景圖片添加深色遮罩確保文字可讀性 */
+.background-slide::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 38, 76, 0.8) 0%,
+    rgba(77, 109, 162, 0.8) 50%,
+    rgba(6, 24, 43, 0.8) 100%
+  );
+  pointer-events: none;
+}
 
 .main-container {
   font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
@@ -1115,7 +1192,7 @@ header img[alt="TIPC Logo"]:hover {
   backdrop-filter: blur(1px);
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 8px rgba(31, 38, 135, 0.37),
+  box-shadow: 0 8px 8px rgba(31, 76, 135, 0.37),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   overflow-y: hidden;
   /* position: relative;
