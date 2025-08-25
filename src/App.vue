@@ -1,8 +1,5 @@
 <template>
   <div class="app-wrapper">
-    <!-- VANTA 波浪背景 -->
-    <div ref="vantaRef" class="vanta-background"></div>
-
     <!-- 主要內容 -->
     <div
       class="w-full h-full flex flex-col relative text-white overflow-hidden bg-transparent main-container"
@@ -220,9 +217,7 @@ export default {
     const currentTime = ref("");
     const currentDate = ref("");
     const currentWeekday = ref("");
-    const vantaRef = ref(null);
     const shipModelRef = ref(null);
-    let vantaEffect = null;
     let shipScene = null;
     let shipRenderer = null;
 
@@ -945,38 +940,6 @@ export default {
       });
     };
 
-    // 效能適配的 VANTA 設定
-    const getVantaConfig = () => {
-      if (shouldReduceEffects.value) {
-        return {
-          mouseControls: false,
-          touchControls: false,
-          gyroControls: false,
-          scale: 1.5,
-          scaleMobile: 1.5,
-          shininess: 10.0,
-          waveHeight: 8.0,
-          waveSpeed: 0.1,
-          zoom: 1.5,
-          forceAnimate: false,
-          color: 0x00264c,
-        };
-      } else {
-        return {
-          mouseControls: false,
-          touchControls: false,
-          gyroControls: false,
-          scale: 1.5,
-          scaleMobile: 1.5,
-          shininess: 10.0,
-          waveHeight: 10.0,
-          waveSpeed: 0.1,
-          zoom: 1.2,
-          forceAnimate: false,
-          color: 0x00264c,
-        };
-      }
-    };
 
     let timeInterval;
     let carouselInterval;
@@ -991,22 +954,6 @@ export default {
       // 先進行效能檢測
       detectPerformance();
 
-      // 根據裝置效能初始化 VANTA 波浪效果
-      if (window.VANTA && window.THREE && !shouldReduceEffects.value) {
-        const vantaConfig = getVantaConfig();
-        vantaEffect = window.VANTA.WAVES({
-          el: vantaRef.value,
-          THREE: window.THREE,
-          minHeight: 100.0,
-          minWidth: 100.0,
-          ...vantaConfig,
-        });
-      } else if (shouldReduceEffects.value) {
-        // 低效能裝置使用簡單背景色
-        vantaRef.value.style.background =
-          "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)";
-        console.log("使用簡化背景以提升效能");
-      }
 
       // 根據裝置效能決定是否載入 3D 船舶模型
       if (!isLowPerformanceDevice.value) {
@@ -1061,9 +1008,6 @@ export default {
       if (scheduleCarouselInterval) {
         clearInterval(scheduleCarouselInterval);
       }
-      if (vantaEffect) {
-        vantaEffect.destroy();
-      }
       if (shipRenderer && shipModelRef.value) {
         shipModelRef.value.removeChild(shipRenderer.domElement);
         shipRenderer.dispose();
@@ -1083,7 +1027,6 @@ export default {
       currentWeatherIndex,
       isLowPerformanceDevice,
       shouldReduceEffects,
-      vantaRef,
       shipModelRef,
       getRowClass,
       getComfortClass,
@@ -1119,14 +1062,6 @@ body {
   overflow: hidden;
 }
 
-.vanta-background {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-}
 
 .main-container {
   font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
