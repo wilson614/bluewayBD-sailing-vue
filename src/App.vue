@@ -8,8 +8,16 @@
       class="w-full h-full flex flex-col relative text-white overflow-hidden bg-transparent main-container"
     >
       <header class="flex justify-between items-center py-2 px-8">
-        <div class="flex flex-col">
-          <h1>布袋港 藍色公路氣象台</h1>
+        <div class="flex items-center gap-4">
+          <!-- TIPC Logo -->
+          <img 
+            src="/images/logo-tipc.svg" 
+            alt="TIPC Logo" 
+            class="h-16 w-auto"
+          />
+          <div class="flex flex-col">
+            <h1>布袋港 藍色公路氣象台</h1>
+          </div>
         </div>
         <div class="datetime-display flex flex-col items-end">
           <div class="date-weekday text-xl text-gray-300">
@@ -48,10 +56,10 @@
               <div>船名</div>
               <div>碼頭</div>
               <div>預定抵達</div>
-              <div>馬公天氣</div>
-              <div>海氣象預報</div>
               <div>航行舒適度</div>
               <div>開航狀態</div>
+              <div>馬公天氣</div>
+              <div>海氣象預報</div>
             </div>
 
             <div
@@ -67,48 +75,15 @@
                   <h3>{{ schedule.departure }}</h3>
                 </div>
                 <div>
-                  <h4>{{ schedule.shipName }}</h4>
+                  <h2>{{ schedule.shipName }}</h2>
                 </div>
                 <div>
-                  <h4>{{ schedule.pier }}</h4>
+                  <h3>{{ schedule.pier }}</h3>
                 </div>
                 <div>
-                  <h5>{{ schedule.arrival }}</h5>
+                  <h3>{{ schedule.arrival }}</h3>
                 </div>
-                <div class="grid grid-cols-3 gap-1">
-                  <div class="text-xl">溫度</div>
-                  <div class="col-span-2">
-                    <b class="text-3xl me-2">{{
-                      getWeatherByTime(schedule.arrival).temperature
-                    }}</b>
-                    <small>°C</small>
-                  </div>
-                  <div class="text-xl">降雨</div>
-                  <div class="col-span-2">
-                    <b class="text-3xl me-2">{{
-                      getWeatherByTime(schedule.arrival).rainChance
-                    }}</b>
-                    <small>%</small>
-                  </div>
-                </div>
-                <div class="grid grid-cols-3 gap-1">
-                  <div class="text-xl">風力</div>
-                  <div class="col-span-2">
-                    <b class="text-3xl me-2">{{ schedule.windLevel }}</b>
-                    <small>級</small>
-                  </div>
-                  <div class="text-xl">浪高</div>
-                  <div class="col-span-2">
-                    <b class="text-3xl me-2">{{ schedule.waveHeight }}</b>
-                    <small>m</small>
-                  </div>
-                  <div class="text-xl">能見度</div>
-                  <div class="col-span-2">
-                    <b class="text-3xl me-2">{{ schedule.visibility }}</b>
-                    <small>km</small>
-                  </div>
-                </div>
-                <div class="flex items-center justify-center">
+                 <div class="flex items-center justify-center">
                   <div
                     class="comfort-level"
                     :class="getComfortClass(schedule.comfort)"
@@ -127,64 +102,108 @@
                     {{ schedule.status }}
                   </div>
                 </div>
+                <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+                  <div class="col-span-2 flex items-center justify-center gap-2">
+                    <!-- 天氣圖示 -->
+                    <div class="weather-icon">
+                      <img 
+                        :src="`/images/weather_icons/day/${getWeatherByTime(schedule.arrival).weatherCode}.svg`"
+                        :alt="getWeatherByTime(schedule.arrival).weatherDesc"
+                        class="w-12 h-12"
+                        onerror="this.style.display='none'; this.nextSibling.style.display='inline-block';"
+                      />
+                      <i class="fas fa-cloud fa-3x text-blue-300" style="display: none;"></i>
+                    </div>
+                    <!-- 溫度資訊 -->
+                    <div class="text-center">
+                      <b class="text-3xl">{{
+                        getWeatherByTime(schedule.arrival).temperature
+                      }}</b>
+                      <small>°C</small>
+                    </div>
+                  </div>
+                  <div class="text-xl text-right"><i class="fas fa-umbrella fa-fw"></i></div>
+                  <div class="col-span-1">
+                    <b class="text-3xl me-2">{{
+                      getWeatherByTime(schedule.arrival).rainChance
+                    }}</b>
+                    <small>%</small>
+                  </div>
+                </div>
+                <div class="grid grid-cols-3 gap-x-4 gap-y-2">
+                  <div class="text-xl text-right pe-2"><i class="fas fa-wind fa-fw"></i></div>
+                  <div class="col-span-2">
+                    <b class="text-3xl me-2">{{ schedule.windLevel }}</b>
+                    <small>級</small>
+                  </div>
+                  <div class="text-xl text-right pe-2"><i class="fas fa-water fa-fw"></i></div>
+                  <div class="col-span-2">
+                    <b class="text-3xl me-2">{{ schedule.waveHeight }}</b>
+                    <small>m</small>
+                  </div>
+                  <div class="text-xl text-right pe-2"><i class="fas fa-eye fa-fw"></i></div>
+                  <div class="col-span-2">
+                    <b class="text-3xl me-2">{{ schedule.visibility }}</b>
+                    <small>km</small>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- 底部區塊：3D 模型 + 貼心提醒 -->
-          <div class="flex gap-8">
-            <!-- 3D 模型區塊 -->
-            <div class="card-ferry basis-1/2 p-6">
-              <div class="flex gap-4 justify-center items-center h-full">
+          <!-- 底部統一資訊區塊 -->
+          <div class="card-ferry p-6">
+            <div class="flex gap-8 h-full">
+              <!-- 3D 模型區塊 -->
+              <div class="basis-1/6 flex justify-center items-center gap-4">
                 <div
                   ref="shipModelRef"
                   class="ship-model-container flex-none"
                 ></div>
-                <div class="text-center flex-1">
+              </div>
+              <div class="basis-2/6 flex justify-center items-center gap-4">
+                <div class="text-center">
                   <h4>請隨時注意現場廣播與看板</h4>
                   <h4 class="text-orange-400 font-bold">風級7級已達管制標準</h4>
                 </div>
               </div>
-            </div>
-            <!-- 貼心提醒區塊 -->
-            <div class="card-ferry basis-1/2 flex flex-col gap-2 p-6">
-              <div
-                class="weather-title flex items-center justify-between gap-2"
-              >
-                <div class="flex items-center gap-2">
-                  <i
-                    class="fas fa-exclamation-triangle fa-fw fa-lg text-yellow-400"
-                  ></i>
-                  <h4 class="inline-block">貼心提醒</h4>
-                </div>
-                <div class="carousel-indicators">
-                  <div
-                    v-for="page in getTotalAlertPages()"
-                    :key="page"
-                    class="indicator"
-                    :class="{ active: getCurrentAlertPage() === page - 1 }"
-                  ></div>
-                </div>
-              </div>
-              <div class="alert-carousel">
-                <div class="alert-slide" :class="{ 'slide-active': true }">
-                  <div class="alert-item">
-                    <i :class="alerts[currentAlertIndex].icon + ' me-2'"></i>
-                    <span>{{ alerts[currentAlertIndex].message }}</span>
+              
+              <!-- 貼心提醒區塊 -->
+              <div class="basis-3/6 flex flex-col gap-2">
+                <div class="weather-title flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                    <i class="fas fa-exclamation-triangle fa-fw fa-lg text-yellow-400"></i>
+                    <h4 class="inline-block">貼心提醒</h4>
                   </div>
-                  <div
-                    class="alert-item"
-                    v-if="alerts[(currentAlertIndex + 1) % alerts.length]"
-                  >
-                    <i
-                      :class="
-                        alerts[(currentAlertIndex + 1) % alerts.length].icon +
-                        ' me-2'
-                      "
-                    ></i>
-                    <span>{{
-                      alerts[(currentAlertIndex + 1) % alerts.length].message
-                    }}</span>
+                  <div class="carousel-indicators">
+                    <div
+                      v-for="page in getTotalAlertPages()"
+                      :key="page"
+                      class="indicator"
+                      :class="{ active: getCurrentAlertPage() === page - 1 }"
+                    ></div>
+                  </div>
+                </div>
+                <div class="alert-carousel">
+                  <div class="alert-slide" :class="{ 'slide-active': true }">
+                    <div class="alert-item">
+                      <i :class="alerts[currentAlertIndex].icon + ' me-2'"></i>
+                      <span>{{ alerts[currentAlertIndex].message }}</span>
+                    </div>
+                    <div
+                      class="alert-item"
+                      v-if="alerts[(currentAlertIndex + 1) % alerts.length]"
+                    >
+                      <i
+                        :class="
+                          alerts[(currentAlertIndex + 1) % alerts.length].icon +
+                          ' me-2'
+                        "
+                      ></i>
+                      <span>{{
+                        alerts[(currentAlertIndex + 1) % alerts.length].message
+                      }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -249,7 +268,7 @@ export default {
         arrival: "15:00",
         windLevel: 4,
         waveHeight: "1",
-        visibility: "5",
+        visibility: "0.8~1",
         comfort: "些微搖晃",
         status: "正常開航",
       },
@@ -299,7 +318,7 @@ export default {
     // 輪播狀態
     const currentAlertIndex = ref(0);
 
-    // 馬公天氣資料（根據抵達時間）
+    // 馬公天氣資料（根據抵達時間）- 來源：中央氣象署澎湖縣預報
     const weatherData = ref([
       {
         id: 1,
@@ -307,6 +326,8 @@ export default {
         temperature: "25~27",
         rainChance: 75,
         visibility: "2-4",
+        weatherCode: "08",
+        weatherDesc: "陣雨",
         title: "11:20 抵達時段",
       },
       {
@@ -315,6 +336,8 @@ export default {
         temperature: "26~28",
         rainChance: 80,
         visibility: "1-5",
+        weatherCode: "15",
+        weatherDesc: "雷陣雨",
         title: "13:00 抵達時段",
       },
       {
@@ -323,7 +346,19 @@ export default {
         temperature: "27~29",
         rainChance: 65,
         visibility: "3-6",
+        weatherCode: "04",
+        weatherDesc: "多雲",
         title: "15:00 抵達時段",
+      },
+      {
+        id: 4,
+        arrivalTime: "17:20",
+        temperature: "24~26",
+        rainChance: 50,
+        visibility: "4-8",
+        weatherCode: "02",
+        weatherDesc: "晴時多雲",
+        title: "17:20 抵達時段",
       },
     ]);
 
@@ -769,7 +804,12 @@ export default {
       const weather = weatherData.value.find(
         (w) => w.arrivalTime === arrivalTime
       );
-      return weather || { temperature: "25~27", rainChance: 70 };
+      return weather || { 
+        temperature: "25~27", 
+        rainChance: 70,
+        weatherCode: "02",
+        weatherDesc: "晴時多雲"
+      };
     };
 
     // 獲取當前頁面要顯示的船班
@@ -1007,6 +1047,16 @@ header h1 {
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
 }
 
+/* TIPC Logo 樣式 */
+header img[alt="TIPC Logo"] {
+  filter: drop-shadow(2px 2px 8px rgba(0, 0, 0, 0.8));
+  transition: transform 0.3s ease;
+}
+
+header img[alt="TIPC Logo"]:hover {
+  transform: scale(1.05);
+}
+
 /* 日期時間顯示區塊 */
 .datetime-display {
   text-align: right;
@@ -1074,7 +1124,7 @@ header h1 {
 
 .grid-ferry {
   display: grid;
-  grid-template-columns: 1fr 1.25fr 0.8fr 0.8fr 1.2fr 1.5fr 0.8fr 1fr;
+  grid-template-columns: 1fr 1.5fr 0.8fr 0.8fr 0.8fr 1fr 1.2fr 1.2fr ;
 }
 
 .schedule-header {
@@ -1168,10 +1218,10 @@ header h1 {
 /* 已移除未使用的 weather-detail 樣式 */
 
 .comfort-level {
-  padding: 1rem;
+  padding: 0.5rem 1rem;
   border-radius: 20px;
-  font-size: 1.375rem; /* 22px = 1.375rem */
-  font-weight: bold;
+  font-size: 1.5rem;
+  font-weight: 500;
   text-align: center;
 }
 
@@ -1200,9 +1250,9 @@ header h1 {
 }
 
 .status {
-  padding: 1vh 1.5vw;
+  padding: 0.5rem 1rem;
   border-radius: 20px;
-  font-size: 1.375rem; /* 22px = 1.375rem */
+  font-size: 1.75rem; /* 22px = 1.375rem */
   font-weight: bold;
   text-align: center;
 }
