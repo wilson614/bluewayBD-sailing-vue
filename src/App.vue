@@ -116,35 +116,35 @@
                     </div>
                     <!-- 溫度資訊 -->
                     <div class="text-center">
-                      <b class="text-3xl me-2">{{
+                      <h4 class="text-bold me-2 inline-block">{{
                         getWeatherByTime(schedule.arrival).temperature
-                      }}</b>
-                      <small>°C</small>
+                      }}</h4>
+                      <p class="inline-block">°C</p>
                     </div>
                   </div>
-                  <div class="text-xl text-right"><i class="fas fa-umbrella fa-fw"></i></div>
+                  <div class="text-2xl text-right"><i class="fas fa-umbrella fa-fw"></i></div>
                   <div class="col-span-1">
-                    <b class="text-3xl me-2">{{
+                    <h5 class="text-bold me-2 inline-block">{{
                       getWeatherByTime(schedule.arrival).rainChance
-                    }}</b>
-                    <small>%</small>
+                    }}</h5>
+                    <p class="inline-block">%</p>
                   </div>
                 </div>
                 <div class="grid grid-cols-3 gap-x-4 gap-y-2">
-                  <div class="text-xl text-right pe-2"><i class="fas fa-wind fa-fw"></i></div>
+                  <div class="text-2xl text-right pe-2"><i class="fas fa-wind fa-fw"></i></div>
                   <div class="col-span-2">
-                    <b class="text-3xl me-2">{{ schedule.windLevel }}</b>
-                    <small>級</small>
+                    <h5 class="text-bold me-2 inline-block">{{ schedule.windLevel }}</h5>
+                    <p class="inline-block">級</p>
                   </div>
-                  <div class="text-xl text-right pe-2"><i class="fas fa-water fa-fw"></i></div>
+                  <div class="text-2xl text-right pe-2"><i class="fas fa-water fa-fw"></i></div>
                   <div class="col-span-2">
-                    <b class="text-3xl me-2">{{ schedule.waveHeight }}</b>
-                    <small>m</small>
+                    <h5 class="text-bold me-2 inline-block">{{ schedule.waveHeight }}</h5>
+                    <p class="inline-block">m</p>
                   </div>
-                  <div class="text-xl text-right pe-2"><i class="fas fa-eye fa-fw"></i></div>
+                  <div class="text-2xl text-right pe-2"><i class="fas fa-eye fa-fw"></i></div>
                   <div class="col-span-2">
-                    <b class="text-3xl me-2">{{ schedule.visibility }}</b>
-                    <small>km</small>
+                    <h5 class="text-bold me-2 inline-block">{{ schedule.visibility }}</h5>
+                    <p class="inline-block">km</p>
                   </div>
                 </div>
               </div>
@@ -155,26 +155,37 @@
           <div class="card-ferry p-6">
             <div class="flex gap-8 h-full">
               <!-- 3D 模型區塊 -->
-              <div class="basis-1/6 flex justify-center items-center gap-4">
+              <div class="basis-2/12 flex flex-col justify-center items-center gap-4">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-exclamation-triangle fa-fw fa-lg text-yellow-400"></i>
+                  <h4 class="inline-block">貼心提醒</h4>
+                </div>
                 <div
                   ref="shipModelRef"
                   class="ship-model-container flex-none"
                 ></div>
               </div>
-              <div class="basis-2/6 flex justify-center items-center gap-4">
-                <div class="text-center">
-                  <h4>請隨時注意現場廣播與看板</h4>
-                  <h4 class="text-orange-400 font-bold">風級7級已達管制標準</h4>
-                </div>
-              </div>
               
               <!-- 貼心提醒區塊 -->
-              <div class="basis-3/6 flex flex-col gap-2">
-                <div class="weather-title flex items-center justify-between gap-2">
-                  <div class="flex items-center gap-2">
-                    <i class="fas fa-exclamation-triangle fa-fw fa-lg text-yellow-400"></i>
-                    <h4 class="inline-block">貼心提醒</h4>
+              <div class="basis-10/12 flex flex-col justify-center gap-4">
+                
+                <div class="alert-carousel">
+                  <div class="alert-slide" :class="{ 'slide-active': true }">
+                    <div class="alert-grid gap-4">
+                      <!-- 使用新的顯示邏輯：前兩個固定為嚴重等級，後兩個輪播其他等級 -->
+                      <div
+                        v-for="(alert, index) in getCurrentDisplayAlerts()"
+                        :key="`alert-${alert.id}-${index}`"
+                        class="alert-item"
+                        :class="getAlertLevelClass(alert.level)"
+                      >
+                        <i :class="alert.icon + ' me-2'"></i>
+                        <h5>{{ alert.message }}</h5>
+                      </div>
+                    </div>
                   </div>
+                </div>
+                <div class="weather-title flex items-center justify-center gap-2">
                   <div class="carousel-indicators">
                     <div
                       v-for="page in getTotalAlertPages()"
@@ -182,28 +193,6 @@
                       class="indicator"
                       :class="{ active: getCurrentAlertPage() === page - 1 }"
                     ></div>
-                  </div>
-                </div>
-                <div class="alert-carousel">
-                  <div class="alert-slide" :class="{ 'slide-active': true }">
-                    <div class="alert-item">
-                      <i :class="alerts[currentAlertIndex].icon + ' me-2'"></i>
-                      <span>{{ alerts[currentAlertIndex].message }}</span>
-                    </div>
-                    <div
-                      class="alert-item"
-                      v-if="alerts[(currentAlertIndex + 1) % alerts.length]"
-                    >
-                      <i
-                        :class="
-                          alerts[(currentAlertIndex + 1) % alerts.length].icon +
-                          ' me-2'
-                        "
-                      ></i>
-                      <span>{{
-                        alerts[(currentAlertIndex + 1) % alerts.length].message
-                      }}</span>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -286,37 +275,85 @@ export default {
       },
     ]);
 
-    // 貼心提醒輪播數據
+    // 貼心提醒輪播數據 (按等級排序: 嚴重 -> 中度 -> 普通)
     const alerts = ref([
+      // 嚴重等級：管制相關
       {
         id: 1,
-        icon: "fas fa-clock fa-fw text-red-200",
-        message: "抵達時間受海氣象因素延遲",
+        icon: "fas fa-wind fa-fw",
+        message: "風級7級已達管制標準",
+        level: "severe",
       },
       {
         id: 2,
-        icon: "fas fa-cloud-rain fa-fw text-sky-200",
-        message: "下雨機率80% 小心甲板濕滑",
+        icon: "fas fa-clock fa-fw",
+        message: "抵達時間受海氣象因素延遲",
+        level: "severe",
       },
+      // 中度等級
       {
         id: 3,
-        icon: "fas fa-pills fa-fw text-lime-100",
-        message: "因風浪搖晃建議準備暈船藥",
+        icon: "fas fa-umbrella fa-fw",
+        message: "下雨機率80% 小心甲板濕滑",
+        level: "moderate",
       },
       {
         id: 4,
-        icon: "fas fa-life-ring fa-fw text-amber-200",
-        message: "請確實穿著救生衣保持安全",
+        icon: "fas fa-pills fa-fw",
+        message: "因風浪搖晃建議準備暈船藥",
+        level: "moderate",
       },
+      // 普通等級
       {
         id: 5,
-        icon: "fas fa-mobile-alt fa-fw ",
+        icon: "fas fa-life-ring fa-fw",
+        message: "請確實穿著救生衣保持安全",
+        level: "normal",
+      },
+      {
+        id: 6,
+        icon: "fas fa-mobile-alt fa-fw",
         message: "船上提供免費 WiFi 供旅客使用",
+        level: "normal",
       },
     ]);
 
     // 輪播狀態
     const currentAlertIndex = ref(0);
+
+    // 分離嚴重等級和其他等級的提醒
+    const getSevereAlerts = () => {
+      return alerts.value.filter(alert => alert.level === 'severe').slice(0, 2);
+    };
+
+    const getNonSevereAlerts = () => {
+      return alerts.value.filter(alert => alert.level !== 'severe');
+    };
+
+    // 獲取當前要顯示的四個提醒（前兩個固定為嚴重等級，後兩個輪播其他等級）
+    const getCurrentDisplayAlerts = () => {
+      const severeAlerts = getSevereAlerts();
+      const nonSevereAlerts = getNonSevereAlerts();
+      
+      const result = [];
+      
+      // 前兩格固定顯示嚴重等級（最多2個）
+      if (severeAlerts.length >= 1) result.push(severeAlerts[0]);
+      if (severeAlerts.length >= 2) result.push(severeAlerts[1]);
+      
+      // 後兩格輪播其他等級
+      if (nonSevereAlerts.length > 0) {
+        const startIndex = currentAlertIndex.value % nonSevereAlerts.length;
+        const remainingSlots = 4 - result.length;
+        
+        for (let i = 0; i < remainingSlots && i < nonSevereAlerts.length; i++) {
+          const index = (startIndex + i) % nonSevereAlerts.length;
+          result.push(nonSevereAlerts[index]);
+        }
+      }
+      
+      return result;
+    };
 
     // 馬公天氣資料（根據抵達時間）- 來源：中央氣象署澎湖縣預報
     const weatherData = ref([
@@ -443,6 +480,19 @@ export default {
 
     const getStatusClass = (status) => {
       return status === "可能停航" ? "status-suspended" : "status-operating";
+    };
+
+    // 根據提醒等級返回對應的樣式類別
+    const getAlertLevelClass = (level) => {
+      switch (level) {
+        case "severe":
+          return "alert-severe";
+        case "moderate":
+          return "alert-moderate";
+        case "normal":
+        default:
+          return "alert-normal";
+      }
     };
 
     // 3D 模型設置函式
@@ -788,20 +838,35 @@ export default {
       }
     };
 
-    // 輪播自動切換功能（每次跳兩個項目）
+    // 輪播自動切換功能（只輪播非嚴重等級的提醒）
     const nextAlert = () => {
-      currentAlertIndex.value =
-        (currentAlertIndex.value + 2) % alerts.value.length;
+      const nonSevereAlerts = getNonSevereAlerts();
+      if (nonSevereAlerts.length > 0) {
+        // 計算需要跳過的數量，確保後兩格都更新
+        const jumpCount = Math.min(2, nonSevereAlerts.length);
+        currentAlertIndex.value = 
+          (currentAlertIndex.value + jumpCount) % nonSevereAlerts.length;
+      }
     };
 
-    // 計算貼心提醒總頁數（每頁顯示2個項目）
+    // 計算貼心提醒總頁數（基於非嚴重等級的輪播）
     const getTotalAlertPages = () => {
-      return Math.ceil(alerts.value.length / 2);
+      const nonSevereAlerts = getNonSevereAlerts();
+      const severeAlerts = getSevereAlerts();
+      const availableSlots = 4 - severeAlerts.length; // 可用於輪播的格數
+      
+      if (nonSevereAlerts.length === 0 || availableSlots <= 0) return 1;
+      return Math.ceil(nonSevereAlerts.length / availableSlots);
     };
 
-    // 獲取當前貼心提醒頁面索引（基於 currentAlertIndex）
+    // 獲取當前貼心提醒頁面索引（基於非嚴重等級的輪播）
     const getCurrentAlertPage = () => {
-      return Math.floor(currentAlertIndex.value / 2);
+      const nonSevereAlerts = getNonSevereAlerts();
+      const severeAlerts = getSevereAlerts();
+      const availableSlots = 4 - severeAlerts.length;
+      
+      if (nonSevereAlerts.length === 0 || availableSlots <= 0) return 0;
+      return Math.floor(currentAlertIndex.value / availableSlots);
     };
 
     // 天氣輪播自動切換功能
@@ -1021,12 +1086,16 @@ export default {
       getRowClass,
       getComfortClass,
       getStatusClass,
+      getAlertLevelClass,
       getWeatherByTime,
       getCurrentPageSchedules,
       getTotalSchedulePages,
       currentSchedulePage,
       getTotalAlertPages,
       getCurrentAlertPage,
+      getCurrentDisplayAlerts,
+      getSevereAlerts,
+      getNonSevereAlerts,
     };
   },
 };
@@ -1153,10 +1222,10 @@ header img[alt="TIPC Logo"]:hover {
   border-radius: 8px;
   margin-bottom: 1rem;
   font-weight: 500;
-  font-size: 1.5rem;
+  font-size: 2rem;
   text-align: center;
   text-shadow: 1px 1px 3px rgba(6, 1, 52, 0.7);
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 1);
 }
 
 .schedule-header > div {
@@ -1210,15 +1279,15 @@ header img[alt="TIPC Logo"]:hover {
 }
 
 .ferry-row.severe {
-  border-left-color: #f44336;
-  background: rgba(244, 67, 54, 0.3);
+  /* border-left-color: #f44336; */
+  /* background: rgba(244, 67, 54, 0.3); */
   color: #ffffff;
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
 }
 
 .ferry-row.moderate {
-  border-left-color: #ff9800;
-  background: rgba(255, 152, 0, 0.3);
+  /* border-left-color: #ff9800; */
+  /* background: rgba(255, 152, 0, 0.3); */
   color: #ffffff;
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
 }
@@ -1359,6 +1428,15 @@ header img[alt="TIPC Logo"]:hover {
   gap: 1vh;
 }
 
+/* 2x2 網格容器 */
+.alert-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  height: 100%;
+  width: 100%;
+}
+
 .alert-slide.slide-active {
   opacity: 1;
   transform: translateX(0);
@@ -1368,13 +1446,49 @@ header img[alt="TIPC Logo"]:hover {
 .alert-item {
   display: flex;
   align-items: center;
-  padding: 0.25rem 1rem;
+  padding: 0.5rem 0.8rem;
   background: rgba(255, 193, 7, 0.2);
   border-radius: 8px;
   border-left: 4px solid #ffc107;
-  font-size: 1.25rem; /* 24px = 1.5rem - H6 級別 */
+  font-weight: 500;
   margin-bottom: 0;
-  flex: 1; /* 讓兩個項目平均分配空間 */
+  height: 100%;
+  min-height: 0;
+  /* 讓文字在需要時換行 */
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+/* 提醒等級樣式 */
+.alert-normal {
+  background: rgba(76, 175, 80, 0.2);
+  border-left-color: #4caf50;
+  color: #ffffff;
+}
+
+.alert-normal i {
+  color: #81c784;
+}
+
+.alert-moderate {
+  background: rgba(255, 152, 0, 0.25);
+  border-left-color: #ff9800;
+  color: #ffffff;
+}
+
+.alert-moderate i {
+  color: #ffb74d;
+}
+
+.alert-severe {
+  background: rgba(244, 67, 54, 0.25);
+  border-left-color: #f44336;
+  color: #ffffff;
+  box-shadow: 0 0 8px rgba(244, 67, 54, 0.3);
+}
+
+.alert-severe i {
+  color: #ef5350;
 }
 
 /* 已移除未使用的天氣幻燈片樣式 */
