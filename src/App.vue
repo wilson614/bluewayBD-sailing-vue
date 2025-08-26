@@ -15,10 +15,12 @@
             alt="TIPC Logo" 
             class="h-16 w-auto"
           />
-          <div class="flex flex-col">
-            <h1>布袋港 藍色公路氣象台</h1>
+          <div class="flex">
+            <h1>布袋港</h1>
+            
           </div>
         </div>
+        <h1 class="inline-block">藍色公路航線資訊</h1>
         <div class="datetime-display flex flex-col items-end">
           <div class="date-weekday text-xl text-gray-300">
             {{ currentDate }} {{ currentWeekday }}
