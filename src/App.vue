@@ -61,7 +61,7 @@
               <div>航行舒適度</div>
               <div>開航狀態</div>
               <div>馬公天氣</div>
-              <div>海氣象預報</div>
+              <div>海象預報</div>
             </div>
 
             <div
