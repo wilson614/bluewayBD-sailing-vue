@@ -15,40 +15,696 @@ body {
   font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
 }
 
-h1 {
-  font-size: 3.75rem;
-  font-weight: 700;
+/* ===== 標題與段落字體樣式設定 ===== */
+
+/* 基礎標題樣式 - 統一設定 */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  padding: 0;
+  line-height: 1.3;
+  font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  text-rendering: optimizeLegibility;
 }
 
-h2 {
-  font-size: 3.25rem;
-  font-weight: bold;
+/* 段落與連結基礎樣式 */
+p, a {
+  margin: 0;
+  padding: 0;
+  line-height: 1.5;
+  font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
 }
 
-h3 {
-  font-size: 3rem;
-  font-weight: bold;
-}
-
-h4 {
-  font-size: 2.5rem;
-  font-weight: bold;
-}
-
-h5 {
-  font-size: 2rem;
-  font-weight: 500;
-}
-
-h6 {
-  font-size: 1.5rem;
-  font-weight: bold;
-}
-
-p {
-  font-size: 1.5rem;
-}
-
+/* 連結樣式 */
 a {
-  font-size: 1.5rem;
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  opacity: 0.8;
+}
+
+
+/* ===== 響應式字體大小設定 ===== */
+
+
+
+h1 { font-size: 2.4rem; font-weight: 700; } 
+h2 { font-size: 2.25rem; font-weight: bold; }  
+h3 { font-size: 2rem;    font-weight: 500; }  
+h4 { font-size: 1.5rem;  font-weight: bold; }  
+h5 { font-size: 1.25rem;    font-weight: 400; }  
+h6 { font-size: 1rem;  font-weight: bold; } 
+p, a { font-size: 1rem; }                  
+
+
+/* 🖥️ 大螢幕 (1920px+) - 電視牆專用 */
+@media (min-width: 1920px) {
+  html, body {
+    font-size: 24px;
+  }     
+}
+
+/* 💻 中等螢幕 (1024px - 1919px) - 桌機 */
+@media (max-width: 1919px) and (min-width: 1024px) {
+  html, body {
+    font-size: 17px;
+  }   
+}
+
+/* 📱 平板和小型桌機 (768px - 1023px) */
+@media (max-width: 1023px) {
+  html, body {
+    font-size: 16px;
+  }
+  h1 { font-size: 2rem; font-weight: 500; } 
+  h2 { font-size: 1.85rem; font-weight: bold; }  
+  h3 { font-size: 1.6rem; font-weight: 500; }  
+}
+
+
+
+/* ===== 專案特定樣式 ===== */
+
+/* 應用程式外層容器 */
+.app-wrapper {
+  position: relative;
+  width: 100vw;
+  min-height: 100vh;
+}
+
+/* 大螢幕保持 16:9 固定比例 */
+@media (min-width: 1920px) {
+  .app-wrapper {
+    height: 100vh;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+  }
+}
+
+/* 1920px 以下允許垂直滾動 */
+@media (max-width: 1919px) {
+  .app-wrapper {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}
+
+/* ===== 背景圖片輪播系統 ===== */
+
+.carousel-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.background-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 2s ease-in-out;
+  transform: scale(1.05); /* 微微放大避免邊緣空白 */
+}
+
+.background-slide.active {
+  opacity: 1;
+}
+
+/* 為背景圖片添加深色遮罩確保文字可讀性 */
+.background-slide::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 38, 76, 0.8) 0%,
+    rgba(77, 109, 162, 0.8) 50%,
+    rgba(6, 24, 43, 0.8) 100%
+  );
+  pointer-events: none;
+}
+
+/* ===== 主要容器樣式 ===== */
+
+.main-container {
+  font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+  font-size: 1.5rem; /* 24px = 1.5rem - H6 級別作為基礎字體 */
+}
+
+/* 大螢幕保持固定高度 */
+@media (min-width: 1920px) {
+  .main-container {
+    height: 100%;
+  }
+}
+
+/* 1920px 以下允許內容自動調整高度 */
+@media (max-width: 1919px) {
+  .main-container {
+    min-height: 100vh;
+    height: auto;
+  }
+}
+
+/* ===== 頁首樣式 ===== */
+
+header h1 {
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+/* TIPC Logo 樣式 */
+header img[alt="TIPC Logo"] {
+  filter: drop-shadow(2px 2px 8px rgba(0, 0, 0, 0.8));
+  transition: transform 0.3s ease;
+}
+
+header img[alt="TIPC Logo"]:hover {
+  transform: scale(1.05);
+}
+
+/* 日期時間顯示區塊 */
+.datetime-display {
+  text-align: right;
+}
+
+.date-weekday {
+  font-size: 1.25rem; /* 20px */
+  font-weight: 500;
+  color: #e5e7eb;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
+  font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  opacity: 0.9;
+}
+
+.time {
+  font-size: 2.25rem; /* 56px = 3.5rem - H2 級別 */
+  font-weight: bold;
+  text-shadow: 2px 2px 8px rgba(17, 58, 109, 0.8);
+  font-family: "Courier New", monospace;
+}
+
+/* ===== 卡片樣式系統 ===== */
+
+.card-ferry {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  backdrop-filter: blur(1px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 8px rgba(31, 76, 135, 0.37),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* 大螢幕固定高度與隱藏滾動 */
+@media (min-width: 1920px) {
+  .card-ferry {
+    overflow-y: hidden;
+  }
+  
+  .ferry-schedule {
+    min-height: 400px;
+  }
+}
+
+/* 1920px 以下允許自動調整高度 */
+@media (max-width: 1919px) {
+  .card-ferry {
+    overflow-y: visible;
+    height: auto;
+  }
+  
+  .ferry-schedule {
+    height: auto;
+    min-height: auto;
+  }
+}
+
+/* ===== 船班時刻表樣式 ===== */
+
+/* 大螢幕固定容器高度 */
+@media (min-width: 1920px) {
+  .ferry-schedules-container {
+    min-height: 280px;
+    height: auto;
+  }
+}
+
+/* 1920px 以下允許容器自動調整 */
+@media (max-width: 1919px) {
+  .ferry-schedules-container {
+    height: auto;
+    min-height: auto;
+  }
+}
+
+.ferry-schedule::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  border-radius: 20px 20px 0 0;
+}
+
+.grid-ferry {
+  /* display: grid; */
+  grid-template-columns: 0.8fr 1.55fr 0.8fr 0.8fr 1fr 1fr 1.1fr 1.2fr;
+}
+
+.schedule-header {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(0.5px);
+  padding: 0.5rem;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  text-shadow: 1px 1px 3px rgba(6, 1, 52, 0.7);
+  color: rgba(255, 255, 255, 1);
+}
+
+.schedule-header > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ferry-row {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(0.5px);
+  border-radius: 8px;
+  align-items: center;
+  border-left: 4px solid transparent;
+  transition: all 0.3s ease;
+  width: 100%;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+}
+
+.ferry-row > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.ferry-row > div.grid {
+  display: grid;
+}
+
+.weather-grid {
+  align-items: center;
+  justify-content: center;
+}
+
+.weather-grid > div:nth-child(odd) {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.weather-grid > div:nth-child(even) {
+  font-weight: bold;
+  margin-right: 1rem;
+}
+
+.ferry-row:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateX(5px);
+}
+
+.ferry-row.severe {
+  color: #ffffff;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+.ferry-row.moderate {
+  color: #ffffff;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+.ferry-row.mild {
+  border-left-color: #2196f3;
+  background: rgba(33, 150, 243, 0.2);
+}
+
+/* ===== 舒適度和狀態指示器 ===== */
+
+.comfort-level {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 1.25rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.comfort-severe {
+  background: #f44336;
+  color: white;
+  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.5);
+}
+
+.comfort-moderate {
+  background: #ff9800;
+  color: white;
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.5);
+}
+
+.comfort-mild {
+  background: #2196f3;
+  color: white;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.5);
+}
+
+.comfort-comfortable {
+  background: #4caf50;
+  color: white;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.5);
+}
+
+.status {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 1.25rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+.status-suspended {
+  background: #f44336;
+  color: white;
+  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.5);
+}
+
+.status-operating {
+  background: #4caf50;
+  color: white;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.5);
+}
+
+/* ===== 貼心提醒輪播系統 ===== */
+
+/* 輪播容器 */
+.alert-carousel {
+  position: relative;
+  height: 80%;
+}
+
+/* 大螢幕固定輪播高度 */
+@media (min-width: 1920px) {
+  /* .alert-carousel {
+    height: 6rem;
+    overflow: hidden;
+  } */
+}
+
+/* 1920px 以下允許輪播自動調整 */
+@media (max-width: 1919px) {
+  /* .alert-carousel {
+    overflow: visible;
+    height: 4rem;
+  } */
+}
+
+/* 輪播幻燈片 */
+.alert-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+}
+
+/* 2x2 網格容器 */
+.alert-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  height: 100%;
+  width: 100%;
+}
+
+.alert-slide.slide-active {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* 輪播中的提醒項目 */
+.alert-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 0.8rem;
+  border-radius: 8px;
+  font-weight: 500;
+  margin-bottom: 0;
+  height: 100%;
+  /* min-height: 3rem; */
+  /* 讓文字在需要時換行 */
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  color: #ffffff;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* 提醒等級樣式 - 增加權重確保在所有螢幕尺寸都生效 */
+.alert-item.alert-normal {
+  background: rgba(76, 175, 80, 0.25);
+  border-left: 4px solid #4caf50;
+  color: #ffffff;
+}
+
+.alert-item.alert-normal i {
+  color: #81c784;
+}
+
+.alert-item.alert-moderate {
+  background: rgba(255, 152, 0, 0.25);
+  border-left: 4px solid #ff9800;
+  color: #ffffff;
+}
+
+.alert-item.alert-moderate i {
+  color: #ffb74d;
+}
+
+.alert-item.alert-severe {
+  background: rgba(244, 67, 54, 0.25);
+  border-left: 4px solid #f44336;
+  color: #ffffff;
+  box-shadow: 0 0 8px rgba(244, 67, 54, 0.3);
+}
+
+.alert-item.alert-severe i {
+  color: #ef5350;
+}
+
+/* ===== 輪播指示器系統 ===== */
+
+.carousel-indicators {
+  display: flex;
+  gap: 6px;
+}
+
+.indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.indicator.active {
+  background: #ffeb3b;
+  box-shadow: 0 0 8px rgba(255, 235, 59, 0.6);
+}
+
+/* 船班分頁指示器 */
+.schedule-page-indicators {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.schedule-page-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.schedule-page-indicator.active {
+  background: #ffc107;
+  border-color: rgba(255, 193, 7, 0.5);
+  box-shadow: 0 0 12px rgba(255, 193, 7, 0.8);
+  transform: scale(1.2);
+}
+
+/* ===== 動畫效果 ===== */
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.urgent {
+  animation: pulse 2s infinite;
+}
+
+/* ===== 3D 模型容器 ===== */
+
+.ship-model-container {
+  overflow: hidden;
+  background: transparent; /* 完全透明背景 */
+}
+
+/* ===== 行動版樣式 ===== */
+
+.ferry-card {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(0.5px);
+  /* border-left: 4px solid transparent; */
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+}
+
+.ferry-card.severe {
+  border-left-color: #f44336;
+}
+
+.ferry-card.moderate {
+  border-left-color: #ff9800;
+}
+
+/* ===== 響應式斷點調整 ===== */
+
+@media (max-width: 1024px) {
+  .main-container {
+    font-size: 1.2rem;
+  }
+  
+  .time {
+    font-size: 1.8rem;
+  }
+  
+  .date-weekday {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-container {
+    font-size: 1rem;
+  }
+  
+  .time {
+    font-size: 1.5rem;
+  }
+  
+  .date-weekday {
+    font-size: 0.9rem;
+  }
+  
+  /* 調整貼心提醒格子大小 */
+  .alert-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, 1fr);
+  }
+  
+  .alert-item {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.6rem;
+    min-height: 2.5rem;
+  }
+  
+  /* 確保在平板尺寸下背景顏色正確顯示 */
+  .alert-item.alert-normal {
+    background: rgba(76, 175, 80, 0.25);
+    border-left: 4px solid #4caf50;
+  }
+  
+  .alert-item.alert-moderate {
+    background: rgba(255, 152, 0, 0.25);
+    border-left: 4px solid #ff9800;
+  }
+  
+  .alert-item.alert-severe {
+    background: rgba(244, 67, 54, 0.25);
+    border-left: 4px solid #f44336;
+    box-shadow: 0 0 8px rgba(244, 67, 54, 0.3);
+  }
+  
+  /* 修正行動裝置背景固定問題 */
+  .background-slide {
+    background-attachment: scroll;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-container {
+    font-size: 0.9rem;
+  }
+  
+  .time {
+    font-size: 1.3rem;
+  }
+  
+  .date-weekday {
+    font-size: 0.8rem;
+  }
+  
+  .ferry-card {
+    font-size: 0.9rem;
+  }
+  
+  .ferry-card .font-bold {
+    font-size: 1rem;
+  }
+  
+  .ferry-card .text-xl {
+    font-size: 1.2rem;
+  }
+  
+  .ferry-card .text-lg {
+    font-size: 1rem;
+  }
 }

@@ -12,40 +12,46 @@
     </div>
     <!-- 主要內容 -->
     <div
-      class="w-full h-full flex flex-col relative text-white overflow-hidden bg-transparent main-container"
+      class="w-full flex flex-col relative text-white bg-transparent main-container"
+      :class="{ 
+        'h-full overflow-hidden': isLargeScreen,
+        'min-h-screen overflow-x-hidden': !isLargeScreen 
+      }"
     >
-      <header class="flex justify-between items-center py-2 px-8">
-        <div class="flex items-center gap-4">
+      <header class="flex flex-col py-3 lg:py-0">
+        <div class="flex flex-row justify-between items-center 2xl:py-2 px-4 sm:py-4 px-8 gap-4 lg:gap-4">
+           <div class="flex items-center gap-2">
           <!-- TIPC Logo -->
           <img 
             src="/images/logo-tipc.svg" 
             alt="TIPC Logo" 
-            class="h-16 w-auto"
+            class="h-8 sm:h-12 lg:h-16 w-auto"
           />
           <div class="flex">
             <h1>布袋港</h1>
-            
           </div>
         </div>
-        <h1 class="inline-block">藍色公路航線資訊</h1>
+        <h1 class="hidden text-center md:text-left md:inline-block">藍色公路航線資訊</h1>
         <div class="datetime-display flex flex-col items-end">
           <div class="date-weekday text-xl text-gray-300">
             {{ currentDate }} {{ currentWeekday }}
           </div>
           <div class="time text-yellow-400">{{ currentTime }}</div>
         </div>
+        </div>
+        <h1 class="block md:hidden text-center">藍色公路航線資訊</h1>
       </header>
 
-      <main class="flex-1 grid gap-8 px-6 min-h-0 main-content">
+      <main class=" lg:grid lg:grid-cols-3 gap-2 lg:gap-4 px-2 lg:px-6 min-h-0 main-content">
         <!-- 左側區塊：船班時刻表 + 3D 模型 + Footer -->
-        <section class="col-span-2 flex flex-col gap-8">
+        <section class="lg:col-span-3 flex flex-col gap-4">
           <!-- 船班時刻表 -->
-          <div class="flex flex-col card-ferry ferry-schedule p-6">
+          <div class="flex flex-col card-ferry ferry-schedule p-4">
             <!-- 船班標題與分頁指示器 -->
-            <div class="flex justify-between items-center mb-4">
-              <div class="flex items-center gap-4">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-2 lg:mb-4 gap-2">
+              <div class="flex flex-col sm:flex-row items-center gap-4">
                 <h3>航班資訊</h3>
-                <div class="text-gray-300">資訊更新時間：{{ currentTime }}</div>
+                <div class="text-gray-300 lg:text-2xl hidden sm:block text-sm">資訊更新時間：{{ currentTime }}</div>
               </div>
               <div
                 class="schedule-page-indicators"
@@ -60,24 +66,24 @@
               </div>
             </div>
 
-            <div class="grid-ferry schedule-header">
-              <div>預定出發</div>
-              <div>船名</div>
-              <div>碼頭</div>
-              <div>預定抵達</div>
-              <div>航行舒適度</div>
-              <div>開航狀態</div>
-              <div>馬公天氣</div>
-              <div>海象預報</div>
+            <!-- 桌面版表格標題 -->
+            <div class="hidden lg:grid grid-ferry schedule-header">
+              <h5>預定出發</h5>
+              <h5>船名</h5>
+              <h5>碼頭</h5>
+              <h5>預定抵達</h5>
+              <h5>航行舒適度</h5>
+              <h5>開航狀態</h5>
+              <h5>馬公天氣</h5>
+              <h5>海象預報</h5>
             </div>
 
-            <div
-              class="flex flex-col items-center gap-2 ferry-schedules-container"
-            >
+            <!-- 桌面版船班列表 -->
+            <div class="hidden lg:flex flex-col items-center gap-2 ferry-schedules-container">
               <div
                 v-for="schedule in getCurrentPageSchedules()"
                 :key="schedule.id"
-                class="grid-ferry ferry-row py-4"
+                class="grid grid-ferry ferry-row py-2"
                 :class="getRowClass(schedule.comfort)"
               >
                 <div>
@@ -111,10 +117,10 @@
                     {{ schedule.status }}
                   </div>
                 </div>
-                <div class="grid grid-cols-2 gap-x-4 gap-y-2">
-                  <div class="col-span-2 flex items-center justify-center gap-2">
+                <div class="grid grid-cols-2 gap-x-3 gap-y-1">
+                  
                     <!-- 天氣圖示 -->
-                    <div class="weather-icon">
+                    <div class="weather-icon flex justify-end">
                       <img 
                         :src="`/images/weather_icons/day/${getWeatherByTime(schedule.arrival).weatherCode}.svg`"
                         :alt="getWeatherByTime(schedule.arrival).weatherDesc"
@@ -124,13 +130,13 @@
                       <i class="fas fa-cloud fa-3x text-blue-300" style="display: none;"></i>
                     </div>
                     <!-- 溫度資訊 -->
-                    <div class="text-center">
+                    <div>
                       <h4 class="text-bold me-2 inline-block">{{
                         getWeatherByTime(schedule.arrival).temperature
                       }}</h4>
                       <p class="inline-block">°C</p>
                     </div>
-                  </div>
+                 
                   <div class="text-2xl text-right"><i class="fas fa-umbrella fa-fw"></i></div>
                   <div class="col-span-1">
                     <h5 class="text-bold me-2 inline-block">{{
@@ -138,8 +144,9 @@
                     }}</h5>
                     <p class="inline-block">%</p>
                   </div>
+                  <div class="col-span-2 text-center"><p>悶熱</p></div>
                 </div>
-                <div class="grid grid-cols-3 gap-x-4 gap-y-2">
+                <div class="grid grid-cols-3 gap-x-3 gap-y-1">
                   <div class="text-2xl text-right pe-2"><i class="fas fa-wind fa-fw"></i></div>
                   <div class="col-span-2">
                     <h5 class="text-bold me-2 inline-block">{{ schedule.windLevel }}</h5>
@@ -158,13 +165,92 @@
                 </div>
               </div>
             </div>
+            
+            <!-- 行動版卡片式列表 -->
+            <div class="lg:hidden space-y-4">
+              <div
+                v-for="schedule in getCurrentPageSchedules()"
+                :key="`mobile-${schedule.id}`"
+                class="ferry-card p-4 rounded-lg"
+                :class="getRowClass(schedule.comfort)"
+              >
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                  <div class="space-y-2">
+                    <p class="text-gray-300">船名</p>
+                    <h2 class="">{{ schedule.shipName }}</h2>
+                  </div>
+                  <div class="space-y-2">
+                    <p class="text-gray-300">碼頭</p>
+                    <h3 class="">{{ schedule.pier }}</h3>
+                  </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                  <div class="space-y-2">
+                    <p class="text-gray-300">預訂出發</p>
+                    <h3 class="">{{ schedule.departure }}</h3>
+                  </div>
+                  <div class="space-y-2">
+                    <p class="text-gray-300">預訂抵達</p>
+                    <h3 class="">{{ schedule.arrival }}</h3>
+                  </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                  <div class="space-y-2">
+                    <p class="text-gray-300">航行舒適度</p>
+                    <div class="comfort-level" :class="getComfortClass(schedule.comfort)">
+                      {{ schedule.comfort }}
+                    </div>
+                  </div>
+                  <div class="space-y-2">
+                    <p class="text-gray-300">開航狀態</p>
+                    <div class="status" :class="[getStatusClass(schedule.status), { urgent: schedule.status === '可能停航' }]">
+                      {{ schedule.status }}
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-2">
+                    <p class="text-gray-300">馬公天氣</p>
+                    <div class="flex items-center gap-2">
+                      <img 
+                        :src="`/images/weather_icons/day/${getWeatherByTime(schedule.arrival).weatherCode}.svg`"
+                        :alt="getWeatherByTime(schedule.arrival).weatherDesc"
+                        class="w-8 h-8"
+                        onerror="this.style.display='none'; this.nextSibling.style.display='inline-block';"
+                      />
+                      <i class="fas fa-cloud text-blue-300" style="display: none;"></i>
+                      <span class="font-bold">{{ getWeatherByTime(schedule.arrival).temperature }}°C</span>
+                    </div>
+                     <div class="text-2xl text-right"><i class="fas fa-umbrella fa-fw"></i></div>
+                    <div class="col-span-1">
+                      <h5 class="text-bold me-2 inline-block">{{
+                        getWeatherByTime(schedule.arrival).rainChance
+                      }}</h5>
+                      <p class="inline-block">%</p>
+                    </div>
+                    <div class="col-span-2 text-center"><p>悶熱</p></div>
+                  </div>
+                  <div class="space-y-2">
+                    <p class="text-gray-300">海象預報</p>
+                    <div class="text-sm">
+                      <div><i class="fas fa-wind"></i> {{ schedule.windLevel }}級</div>
+                      <div><i class="fas fa-water"></i> {{ schedule.waveHeight }}m</div>
+                      <div><i class="fas fa-eye"></i> {{ schedule.waveHeight }}km</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- 底部統一資訊區塊 -->
-          <div class="card-ferry p-6">
-            <div class="flex gap-8 h-full">
+          <div class="card-ferry p-3 lg:p-4">
+            <div class="flex flex-col lg:flex-row gap-4 lg:gap-8 h-full">
               <!-- 3D 模型區塊 -->
-              <div class="basis-2/12 flex flex-col justify-center items-center gap-4">
+              <div class="lg:basis-2/12 flex flex-col justify-center items-center gap-2 lg:gap-4">
                 <div class="flex items-center gap-2">
                   <i class="fas fa-exclamation-triangle fa-fw fa-lg text-yellow-400"></i>
                   <h4 class="inline-block">貼心提醒</h4>
@@ -176,7 +262,7 @@
               </div>
               
               <!-- 貼心提醒區塊 -->
-              <div class="basis-10/12 flex flex-col justify-center gap-4">
+              <div class="lg:basis-10/12 flex flex-col justify-center gap-2">
                 
                 <div class="alert-carousel">
                   <div class="alert-slide" :class="{ 'slide-active': true }">
@@ -208,11 +294,6 @@
             </div>
           </div>
         </section>
-
-        <!-- 右側資訊面板（預留空間） -->
-        <aside class="flex flex-col gap-8">
-          <!-- 可在此添加其他資訊或廣告 -->
-        </aside>
       </main>
     </div>
   </div>
@@ -335,6 +416,18 @@ export default {
 
     // 輪播狀態
     const currentAlertIndex = ref(0);
+    
+    // 響應式裝置偵測
+    const isMobile = ref(false);
+    const isLargeScreen = ref(false);
+    
+    const checkMobile = () => {
+      isMobile.value = window.innerWidth < 768;
+    };
+    
+    const checkLargeScreen = () => {
+      isLargeScreen.value = window.innerWidth >= 1920;
+    };
 
     // 分離嚴重等級和其他等級的提醒
     const getSevereAlerts = () => {
@@ -345,11 +438,26 @@ export default {
       return alerts.value.filter(alert => alert.level !== 'severe');
     };
 
-    // 獲取當前要顯示的四個提醒（前兩個固定為嚴重等級，後兩個輪播其他等級）
+    // 獲取當前要顯示的提醒（響應式：桌面4個，行動版所有輪播）
     const getCurrentDisplayAlerts = () => {
       const severeAlerts = getSevereAlerts();
       const nonSevereAlerts = getNonSevereAlerts();
       
+      // 行動版：顯示所有提醒（垂直堆疊）
+      if (isMobile.value) {
+        const allAlerts = [...severeAlerts, ...nonSevereAlerts];
+        const startIndex = currentAlertIndex.value % allAlerts.length;
+        const displayCount = Math.min(4, allAlerts.length); // 行動版最多顯示4個
+        
+        const result = [];
+        for (let i = 0; i < displayCount; i++) {
+          const index = (startIndex + i) % allAlerts.length;
+          result.push(allAlerts[index]);
+        }
+        return result;
+      }
+      
+      // 桌面版：2x2格式（前兩個固定為嚴重等級，後兩個輪播其他等級）
       const result = [];
       
       // 前兩格固定顯示嚴重等級（最多2個）
@@ -375,7 +483,7 @@ export default {
       {
         id: 1,
         arrivalTime: "11:20",
-        temperature: "25~27",
+        temperature: "27",
         rainChance: 75,
         visibility: "2-4",
         weatherCode: "08",
@@ -385,7 +493,7 @@ export default {
       {
         id: 2,
         arrivalTime: "13:00",
-        temperature: "26~28",
+        temperature: "28",
         rainChance: 80,
         visibility: "1-5",
         weatherCode: "15",
@@ -395,7 +503,7 @@ export default {
       {
         id: 3,
         arrivalTime: "15:00",
-        temperature: "27~29",
+        temperature: "29",
         rainChance: 65,
         visibility: "3-6",
         weatherCode: "04",
@@ -405,7 +513,7 @@ export default {
       {
         id: 4,
         arrivalTime: "17:20",
-        temperature: "24~26",
+        temperature: "26",
         rainChance: 50,
         visibility: "4-8",
         weatherCode: "02",
@@ -978,6 +1086,18 @@ export default {
 
       // 先進行效能檢測
       detectPerformance();
+      
+      // 初始化響應式偵測
+      checkMobile();
+      checkLargeScreen();
+      
+      // 添加響應式監聽器
+      const handleResponsiveChange = () => {
+        checkMobile();
+        checkLargeScreen();
+        handleResize();
+      };
+      window.addEventListener("resize", handleResponsiveChange);
 
       // 啟動背景圖片自動輪播（每30秒切換一次）
       backgroundInterval = setInterval(nextBackground, 30000);
@@ -999,8 +1119,7 @@ export default {
         console.log("使用簡化船舶圖示以提升效能");
       }
 
-      // 添加視窗大小變化監聽器
-      window.addEventListener("resize", handleResize);
+      // 註：響應式監聽器已在上方添加
 
       // 啟動輪播自動切換（每 4 秒切換一次）
       carouselInterval = setInterval(nextAlert, 4000);
@@ -1057,6 +1176,8 @@ export default {
       currentWeatherIndex,
       isLowPerformanceDevice,
       shouldReduceEffects,
+      isMobile,
+      isLargeScreen,
       backgroundImages,
       currentBackgroundIndex,
       shipModelRef,
@@ -1078,456 +1199,3 @@ export default {
 };
 </script>
 
-<style scoped>
-html,
-body {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-.app-wrapper {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-}
-
-/* 輪播背景圖片 */
-.carousel-background {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-  overflow: hidden;
-}
-
-.background-slide {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  opacity: 0;
-  transition: opacity 2s ease-in-out;
-  transform: scale(1.05); /* 微微放大避免邊緣空白 */
-}
-
-.background-slide.active {
-  opacity: 1;
-}
-
-/* 為背景圖片添加深色遮罩確保文字可讀性 */
-.background-slide::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    135deg,
-    rgba(0, 38, 76, 0.8) 0%,
-    rgba(77, 109, 162, 0.8) 50%,
-    rgba(6, 24, 43, 0.8) 100%
-  );
-  pointer-events: none;
-}
-
-.main-container {
-  font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
-  font-size: 1.5rem; /* 24px = 1.5rem - H6 級別作為基礎字體 */
-}
-
-header h1 {
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
-}
-
-/* TIPC Logo 樣式 */
-header img[alt="TIPC Logo"] {
-  filter: drop-shadow(2px 2px 8px rgba(0, 0, 0, 0.8));
-  transition: transform 0.3s ease;
-}
-
-header img[alt="TIPC Logo"]:hover {
-  transform: scale(1.05);
-}
-
-/* 日期時間顯示區塊 */
-.datetime-display {
-  text-align: right;
-}
-
-.date-weekday {
-  font-size: 1.25rem; /* 20px */
-  font-weight: 500;
-  color: #e5e7eb;
-  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
-  font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
-  opacity: 0.9;
-}
-
-.time {
-  font-size: 2.25rem; /* 56px = 3.5rem - H2 級別 */
-  font-weight: bold;
-  text-shadow: 2px 2px 8px rgba(17, 58, 109, 0.8);
-  font-family: "Courier New", monospace;
-}
-
-/* main-content 現在使用 Tailwind utilities */
-
-.card-ferry {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(255, 255, 255, 0.05) 50%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
-  backdrop-filter: blur(1px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 8px rgba(31, 76, 135, 0.37),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  overflow-y: hidden;
-  /* position: relative;
-  min-height: 400px; */
-}
-
-.ferry-schedule {
-  min-height: 400px;
-}
-
-.ferry-schedules-container {
-  min-height: 280px;
-  height: auto;
-}
-
-.ferry-schedule::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
-  border-radius: 20px 20px 0 0;
-}
-
-.grid-ferry {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr 0.8fr 0.8fr 0.8fr 1fr 1.2fr 1.2fr ;
-}
-
-.schedule-header {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(0.5px);
-  padding: 0.5rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  font-weight: 500;
-  font-size: 2rem;
-  text-align: center;
-  text-shadow: 1px 1px 3px rgba(6, 1, 52, 0.7);
-  color: rgba(255, 255, 255, 1);
-}
-
-.schedule-header > div {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.ferry-row {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(0.5px);
-  border-radius: 8px;
-  align-items: center;
-  border-left: 4px solid transparent;
-  transition: all 0.3s ease;
-  font-size: 1.5rem;
-  width: 100%;
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
-  color: #ffffff;
-}
-
-.ferry-row > div {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-}
-
-.ferry-row > div.grid {
-  display: grid;
-}
-
-.weather-grid {
-  align-items: center;
-  justify-content: center;
-}
-
-.weather-grid > div:nth-child(odd) {
-  font-size: 0.9rem;
-  opacity: 0.9;
-}
-
-.weather-grid > div:nth-child(even) {
-  font-weight: bold;
-  margin-right: 1rem;
-}
-
-.ferry-row:hover {
-  background: rgba(255, 255, 255, 0.25);
-  transform: translateX(5px);
-}
-
-.ferry-row.severe {
-  /* border-left-color: #f44336; */
-  /* background: rgba(244, 67, 54, 0.3); */
-  color: #ffffff;
-  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
-}
-
-.ferry-row.moderate {
-  /* border-left-color: #ff9800; */
-  /* background: rgba(255, 152, 0, 0.3); */
-  color: #ffffff;
-  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
-}
-
-.ferry-row.mild {
-  border-left-color: #2196f3;
-  background: rgba(33, 150, 243, 0.2);
-}
-
-/* .time-slot {
-  font-size: 2rem;
-  font-weight: bold;
-  text-align: center;
-} */
-
-/* 已移除未使用的 weather-detail 樣式 */
-
-.comfort-level {
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 1.5rem;
-  font-weight: 500;
-  text-align: center;
-}
-
-.comfort-severe {
-  background: #f44336;
-  color: white;
-  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.5);
-}
-
-.comfort-moderate {
-  background: #ff9800;
-  color: white;
-  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.5);
-}
-
-.comfort-mild {
-  background: #2196f3;
-  color: white;
-  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.5);
-}
-
-.comfort-comfortable {
-  background: #4caf50;
-  color: white;
-  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.5);
-}
-
-.status {
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 1.75rem; /* 22px = 1.375rem */
-  font-weight: bold;
-  text-align: center;
-}
-
-.status-suspended {
-  background: #f44336;
-  color: white;
-  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.5);
-}
-
-.status-operating {
-  background: #4caf50;
-  color: white;
-  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.5);
-}
-
-/* 輪播容器 */
-.alert-carousel {
-  position: relative;
-  min-height: 15vh;
-  height: auto; /* 增加高度以容納兩個項目 */
-  overflow: hidden;
-}
-
-/* 已移除未使用的天氣輪播樣式 */
-
-/* 輪播指示器 */
-.carousel-indicators {
-  display: flex;
-  gap: 6px;
-}
-
-.indicator {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.indicator.active {
-  background: #ffeb3b;
-  box-shadow: 0 0 8px rgba(255, 235, 59, 0.6);
-}
-
-/* 已移除未使用的天氣指示器樣式 */
-
-/* 船班分頁指示器 */
-.schedule-page-indicators {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.schedule-page-indicator {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transition: all 0.3s ease;
-  cursor: pointer;
-  border: 2px solid transparent;
-}
-
-.schedule-page-indicator.active {
-  background: #ffc107;
-  border-color: rgba(255, 193, 7, 0.5);
-  box-shadow: 0 0 12px rgba(255, 193, 7, 0.8);
-  transform: scale(1.2);
-}
-
-/* 輪播幻燈片 */
-.alert-slide {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  transform: translateX(100%);
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  flex-direction: column;
-  gap: 1vh;
-}
-
-/* 2x2 網格容器 */
-.alert-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  height: 100%;
-  width: 100%;
-}
-
-.alert-slide.slide-active {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-/* 輪播中的提醒項目 */
-.alert-item {
-  display: flex;
-  align-items: center;
-  padding: 0.5rem 0.8rem;
-  background: rgba(255, 193, 7, 0.2);
-  border-radius: 8px;
-  border-left: 4px solid #ffc107;
-  font-weight: 500;
-  margin-bottom: 0;
-  height: 100%;
-  min-height: 0;
-  /* 讓文字在需要時換行 */
-  flex-wrap: wrap;
-  justify-content: flex-start;
-}
-
-/* 提醒等級樣式 */
-.alert-normal {
-  background: rgba(76, 175, 80, 0.2);
-  border-left-color: #4caf50;
-  color: #ffffff;
-}
-
-.alert-normal i {
-  color: #81c784;
-}
-
-.alert-moderate {
-  background: rgba(255, 152, 0, 0.25);
-  border-left-color: #ff9800;
-  color: #ffffff;
-}
-
-.alert-moderate i {
-  color: #ffb74d;
-}
-
-.alert-severe {
-  background: rgba(244, 67, 54, 0.25);
-  border-left-color: #f44336;
-  color: #ffffff;
-  box-shadow: 0 0 8px rgba(244, 67, 54, 0.3);
-}
-
-.alert-severe i {
-  color: #ef5350;
-}
-
-/* 已移除未使用的天氣幻燈片樣式 */
-
-/* 已移除未使用的 footer 和 mascot 樣式 */
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
-.urgent {
-  animation: pulse 2s infinite;
-}
-
-/* 3D 船舶模型樣式 */
-.ship-model-container {
-  overflow: hidden;
-  background: transparent; /* 完全透明背景 */
-}
-
-/* 已移除未使用的 footer 資訊樣式 */
-</style>
