@@ -468,33 +468,17 @@ export default {
       return alerts.value.filter(alert => alert.level !== 'severe');
     };
 
-    // 獲取當前要顯示的提醒（響應式：桌面4個，行動版所有輪播）
+    // 獲取當前要顯示的提醒（統一輪播邏輯：嚴重等級固定，其他等級輪播）
     const getCurrentDisplayAlerts = () => {
       const severeAlerts = getSevereAlerts();
       const nonSevereAlerts = getNonSevereAlerts();
-      
-      // 行動版：顯示所有提醒（垂直堆疊）
-      if (isMobile.value) {
-        const allAlerts = [...severeAlerts, ...nonSevereAlerts];
-        const startIndex = currentAlertIndex.value % allAlerts.length;
-        const displayCount = Math.min(4, allAlerts.length); // 行動版最多顯示4個
-        
-        const result = [];
-        for (let i = 0; i < displayCount; i++) {
-          const index = (startIndex + i) % allAlerts.length;
-          result.push(allAlerts[index]);
-        }
-        return result;
-      }
-      
-      // 桌面版：2x2格式（前兩個固定為嚴重等級，後兩個輪播其他等級）
       const result = [];
       
-      // 前兩格固定顯示嚴重等級（最多2個）
+      // 統一邏輯：前兩格固定顯示嚴重等級（最多2個）
       if (severeAlerts.length >= 1) result.push(severeAlerts[0]);
       if (severeAlerts.length >= 2) result.push(severeAlerts[1]);
       
-      // 後兩格輪播其他等級
+      // 後面格子輪播其他等級
       if (nonSevereAlerts.length > 0) {
         const startIndex = currentAlertIndex.value % nonSevereAlerts.length;
         const remainingSlots = 4 - result.length;
