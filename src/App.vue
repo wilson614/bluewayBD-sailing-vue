@@ -1148,7 +1148,7 @@ export default {
         if (shipModelRef.value) {
           shipModelRef.value.innerHTML = `
             <div style="display: flex; align-items: center; justify-content: center; height: 100%; border-radius: 8px;">
-              <i class="fas fa-ship" style="font-size: 4rem; color: #00bcd4;"></i>
+              <img src="/images/porta.png">
             </div>
           `;
         }
