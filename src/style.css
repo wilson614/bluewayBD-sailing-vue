@@ -247,8 +247,7 @@ header img[alt="TIPC Logo"]:hover {
 /* 1920px 以下允許自動調整高度 */
 @media (max-width: 1919px) {
   .card-ferry {
-    overflow-y: visible;
-    height: auto;
+    height: 100%;
   }
   
   .ferry-schedule {

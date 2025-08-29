@@ -47,21 +47,40 @@
         <section class="lg:col-span-3 flex flex-col gap-4">
           <!-- 船班時刻表 -->
           <div class="flex flex-col card-ferry ferry-schedule p-4">
-            <!-- 船班標題與分頁指示器 -->
-            <div class="flex flex-col sm:flex-row justify-between items-center mb-2 lg:mb-4 gap-2">
-              <div class="flex flex-col sm:flex-row items-center gap-4">
+            <!-- 船班標題 -->
+            <div class="flex justify-between items-center mb-2 lg:mb-4 gap-2">
+              <div class="flex items-center justify-between gap-4 w-full lg:w-auto">
                 <h3>航班資訊</h3>
-                <div class="text-gray-300 lg:text-2xl hidden sm:block text-sm">資訊更新時間：{{ currentTime }}</div>
+                <div class="text-gray-300 lg:text-2xl text-sm">資訊更新時間：{{ currentTime }}</div>
               </div>
+              <!-- 桌面版分頁指示器 -->
               <div
-                class="schedule-page-indicators"
+                class="schedule-page-indicators hidden lg:flex"
                 v-if="getTotalSchedulePages() > 1"
               >
                 <div
                   v-for="page in getTotalSchedulePages()"
                   :key="page"
-                  class="schedule-page-indicator"
+                  class="schedule-page-indicator hidden lg:flex"
                   :class="{ active: currentSchedulePage === page - 1 }"
+                ></div>
+              </div>
+            </div>
+            
+            <!-- 行動版航班輪播指示器（獨立區域） -->
+            <div
+              class="mobile-schedule-indicators-container lg:hidden flex justify-center mb-4"
+              v-if="getTotalMobileSchedules() > 1"
+            >
+              <div class="flex gap-2">
+                <div
+                  v-for="schedule in getTotalMobileSchedules()"
+                  :key="`mobile-indicator-${schedule}`"
+                  class="mobile-schedule-indicator w-3 h-3 rounded-full transition-colors duration-300"
+                  :class="{ 
+                    'bg-blue-400': currentMobileScheduleIndex === schedule - 1,
+                    'bg-gray-400': currentMobileScheduleIndex !== schedule - 1 
+                  }"
                 ></div>
               </div>
             </div>
@@ -169,7 +188,7 @@
             <!-- 行動版卡片式列表 -->
             <div class="lg:hidden space-y-4">
               <div
-                v-for="schedule in getCurrentPageSchedules()"
+                v-for="schedule in getCurrentMobileSchedules()"
                 :key="`mobile-${schedule.id}`"
                 class="ferry-card p-4 rounded-lg"
                 :class="getRowClass(schedule.comfort)"
@@ -222,23 +241,34 @@
                         onerror="this.style.display='none'; this.nextSibling.style.display='inline-block';"
                       />
                       <i class="fas fa-cloud text-blue-300" style="display: none;"></i>
-                      <span class="font-bold">{{ getWeatherByTime(schedule.arrival).temperature }}°C</span>
+                      <h4>{{ getWeatherByTime(schedule.arrival).temperature }}</h4>
+                      <p >°C</p>
                     </div>
-                     <div class="text-2xl text-right"><i class="fas fa-umbrella fa-fw"></i></div>
-                    <div class="col-span-1">
-                      <h5 class="text-bold me-2 inline-block">{{
+                    
+                    <div class="flex items-center gap-2">
+                      <div class="text-2xl text-right"><i class="fas fa-umbrella fa-fw"></i></div>
+                      <h5>{{
                         getWeatherByTime(schedule.arrival).rainChance
                       }}</h5>
-                      <p class="inline-block">%</p>
+                      <p>%</p>
                     </div>
-                    <div class="col-span-2 text-center"><p>悶熱</p></div>
-                  </div>
+                    <p>悶熱</p></div>
                   <div class="space-y-2">
                     <p class="text-gray-300">海象預報</p>
-                    <div class="text-sm">
-                      <div><i class="fas fa-wind"></i> {{ schedule.windLevel }}級</div>
-                      <div><i class="fas fa-water"></i> {{ schedule.waveHeight }}m</div>
-                      <div><i class="fas fa-eye"></i> {{ schedule.waveHeight }}km</div>
+                    <div>
+                      <div class="flex flex-row items-center gap-2">
+                        <i class="fas fa-wind"></i> 
+                        <h5>{{ schedule.windLevel }}</h5>
+                        <p>級</p></div>
+                      <div class="flex flex-row items-center gap-2">
+                        <i class="fas fa-water"></i>
+                         <h5>{{ schedule.waveHeight }}</h5>
+                         <p>m</p></div>
+                      <div class="flex flex-row items-center gap-2">
+                        <i class="fas fa-eye"></i>
+                         <h5>{{ schedule.waveHeight }}</h5>
+                         <p>km</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -526,8 +556,12 @@ export default {
     const currentWeatherIndex = ref(0);
 
     // 船班輪播相關
-    const maxDisplaySchedules = 2; // 最多顯示 2 個航班
+    const maxDisplaySchedules = 2; // 桌面版最多顯示 2 個航班
     const currentSchedulePage = ref(0);
+    
+    // 行動版航班輪播相關
+    const currentMobileScheduleIndex = ref(0);
+    const maxMobileDisplaySchedules = 1; // 行動版每次顯示 1 個航班
 
     // 效能監控
     const isLowPerformanceDevice = ref(false);
@@ -1024,7 +1058,7 @@ export default {
       };
     };
 
-    // 獲取當前頁面要顯示的船班
+    // 獲取當前頁面要顯示的船班（桌面版）
     const getCurrentPageSchedules = () => {
       const startIndex = currentSchedulePage.value * maxDisplaySchedules;
       return schedules.value.slice(
@@ -1032,18 +1066,35 @@ export default {
         startIndex + maxDisplaySchedules
       );
     };
+    
+    // 獲取當前要顯示的船班（行動版）
+    const getCurrentMobileSchedules = () => {
+      // 行動版從完整航班列表中取得當前要顯示的單一航班
+      return [schedules.value[currentMobileScheduleIndex.value]];
+    };
 
-    // 船班輪播控制
+    // 船班輪播控制（桌面版）
     const nextSchedulePage = () => {
       const totalPages = Math.ceil(
         schedules.value.length / maxDisplaySchedules
       );
       currentSchedulePage.value = (currentSchedulePage.value + 1) % totalPages;
     };
+    
+    // 行動版航班輪播控制
+    const nextMobileSchedule = () => {
+      currentMobileScheduleIndex.value = 
+        (currentMobileScheduleIndex.value + 1) % schedules.value.length;
+    };
 
-    // 計算總頁數
+    // 計算總頁數（桌面版）
     const getTotalSchedulePages = () => {
       return Math.ceil(schedules.value.length / maxDisplaySchedules);
+    };
+    
+    // 計算行動版輪播總數
+    const getTotalMobileSchedules = () => {
+      return schedules.value.length;
     };
 
     // 效能檢測函數
@@ -1077,6 +1128,7 @@ export default {
     let carouselInterval;
     let weatherCarouselInterval;
     let scheduleCarouselInterval;
+    let mobileScheduleCarouselInterval;
     let backgroundInterval;
 
     onMounted(() => {
@@ -1111,7 +1163,7 @@ export default {
         // 低效能裝置顯示簡單的船舶圖片
         if (shipModelRef.value) {
           shipModelRef.value.innerHTML = `
-            <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: rgba(255,255,255,0.1); border-radius: 8px;">
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%; border-radius: 8px;">
               <i class="fas fa-ship" style="font-size: 4rem; color: #00bcd4;"></i>
             </div>
           `;
@@ -1130,6 +1182,11 @@ export default {
       // 啟動船班輪播自動切換（只在超過2個船班時啟動，每8秒切換一次）
       if (schedules.value.length > maxDisplaySchedules) {
         scheduleCarouselInterval = setInterval(nextSchedulePage, 8000);
+      }
+      
+      // 啟動行動版航班輪播自動切換（超過1個船班時啟動，每5秒切換一次）
+      if (schedules.value.length > 1) {
+        mobileScheduleCarouselInterval = setInterval(nextMobileSchedule, 5000);
       }
 
       // 添加緊急狀態閃爍效果
@@ -1153,6 +1210,9 @@ export default {
       }
       if (scheduleCarouselInterval) {
         clearInterval(scheduleCarouselInterval);
+      }
+      if (mobileScheduleCarouselInterval) {
+        clearInterval(mobileScheduleCarouselInterval);
       }
       if (backgroundInterval) {
         clearInterval(backgroundInterval);
@@ -1189,6 +1249,9 @@ export default {
       getCurrentPageSchedules,
       getTotalSchedulePages,
       currentSchedulePage,
+      getCurrentMobileSchedules,
+      getTotalMobileSchedules,
+      currentMobileScheduleIndex,
       getTotalAlertPages,
       getCurrentAlertPage,
       getCurrentDisplayAlerts,
