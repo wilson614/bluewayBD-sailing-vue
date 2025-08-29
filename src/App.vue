@@ -1122,7 +1122,7 @@ export default {
       fetching = true;
       try {
         const res = await fetch(
-          "https://localhost:44309/shipscheduledata?port=MK&date=2025-08-29"
+          "https://training.ezoomcloud.com/api/shipscheduledata?port=MK&date=2025-08-29"
         );
         const data = await res.json();
 
@@ -1224,7 +1224,8 @@ export default {
 
       // 啟動天氣輪播自動切換（每 5 秒切換一次）
       weatherCarouselInterval = setInterval(nextWeather, 5000);
-
+      
+      console.log("船班資料數量:", schedules_api.value.length, maxDisplaySchedules);
       // 啟動船班輪播自動切換（只在超過2個船班時啟動，每8秒切換一次）
       if (schedules_api.value.length > maxDisplaySchedules) {
         scheduleCarouselInterval = setInterval(nextSchedulePage, 8000);
