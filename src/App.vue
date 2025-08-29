@@ -350,6 +350,8 @@ export default {
     ]);
     const currentBackgroundIndex = ref(0);
 
+    const schedules_api = ref([]);
+    
     const schedules = ref([
       {
         id: 1,
@@ -491,6 +493,8 @@ export default {
       
       return result;
     };
+
+    const weatherData_api = ref([]);
 
     // 馬公天氣資料（根據抵達時間）- 來源：中央氣象署澎湖縣預報
     const weatherData = ref([
@@ -1019,19 +1023,19 @@ export default {
     // 天氣輪播自動切換功能
     const nextWeather = () => {
       currentWeatherIndex.value =
-        (currentWeatherIndex.value + 1) % weatherData.value.length;
+        (currentWeatherIndex.value + 1) % weatherData_api.value.length;
     };
 
     // 根據船班抵達時間同步天氣資訊
     const syncWeatherWithSchedule = () => {
       // 直接按照順序輪播天氣資訊
       currentWeatherIndex.value =
-        (currentWeatherIndex.value + 1) % weatherData.value.length;
+        (currentWeatherIndex.value + 1) % weatherData_api.value.length;
     };
 
     // 根據抵達時間獲取對應的天氣資料
     const getWeatherByTime = (arrivalTime) => {
-      const weather = weatherData.value.find(
+      const weather = weatherData_api.value.find(
         (w) => w.arrivalTime === arrivalTime
       );
       return weather || { 
@@ -1045,7 +1049,7 @@ export default {
     // 獲取當前頁面要顯示的船班（桌面版）
     const getCurrentPageSchedules = () => {
       const startIndex = currentSchedulePage.value * maxDisplaySchedules;
-      return schedules.value.slice(
+      return schedules_api.value.slice(
         startIndex,
         startIndex + maxDisplaySchedules
       );
@@ -1053,14 +1057,18 @@ export default {
     
     // 獲取當前要顯示的船班（行動版）
     const getCurrentMobileSchedules = () => {
-      // 行動版從完整航班列表中取得當前要顯示的單一航班
-      return [schedules.value[currentMobileScheduleIndex.value]];
+      const list = Array.isArray(schedules_api.value) ? schedules_api.value : [];
+      const len = list.length;
+      if (!len) return [];
+      const i = ((currentMobileScheduleIndex.value % len) + len) % len; // 正規化索引
+      const item = list[i];
+      return item ? [item] : [];
     };
 
     // 船班輪播控制（桌面版）
     const nextSchedulePage = () => {
       const totalPages = Math.ceil(
-        schedules.value.length / maxDisplaySchedules
+        schedules_api.value.length / maxDisplaySchedules
       );
       currentSchedulePage.value = (currentSchedulePage.value + 1) % totalPages;
     };
@@ -1068,17 +1076,17 @@ export default {
     // 行動版航班輪播控制
     const nextMobileSchedule = () => {
       currentMobileScheduleIndex.value = 
-        (currentMobileScheduleIndex.value + 1) % schedules.value.length;
+        (currentMobileScheduleIndex.value + 1) % schedules_api.value.length;
     };
 
     // 計算總頁數（桌面版）
     const getTotalSchedulePages = () => {
-      return Math.ceil(schedules.value.length / maxDisplaySchedules);
+      return Math.ceil(schedules_api.value.length / maxDisplaySchedules);
     };
     
     // 計算行動版輪播總數
     const getTotalMobileSchedules = () => {
-      return schedules.value.length;
+      return schedules_api.value.length;
     };
 
     // 效能檢測函數
@@ -1107,6 +1115,56 @@ export default {
       });
     };
 
+    let fetching = false;
+    let scheduleTimer = null;
+    async function fetchScheduleApi() {
+      if (fetching) return;
+      fetching = true;
+      try {
+        const res = await fetch(
+          "https://localhost:44309/shipscheduledata?port=MK&date=2025-08-29"
+        );
+        const data = await res.json();
+
+        schedules_api.value = (data.items ?? []).map((item, i) => ({
+          id: i + 1,
+          departure: item.depart,
+          shipName: item.ship,
+          pier: item.pier,
+          arrival: item.eta,
+          windLevel: Number(item.wind),
+          waveHeight: String(item.waveHeight ?? "N/A"),
+          visibility: String(item.vis ?? "N/A"),
+          comfort: item.comfort,
+          status: item.status,
+        }));
+
+        const mapWeatherDescToCode = (desc) => {
+          const m = { '晴':'01','晴時多雲':'02','多雲':'04','陰':'05','陣雨':'08','豪雨':'12','雷陣雨':'15' };
+          return m[desc] ?? '02';
+        };
+
+        weatherData_api.value = (data.items ?? []).map((item, i) => ({
+          id: i + 1,
+          arrivalTime: item.eta,                              // 你原本用 arrivalTime 對齊
+          temperature: String(item.temp ?? ''),               // 例如 '32'
+          rainChance: typeof item.rainpop === 'string'
+            ? (parseInt(item.rainpop.replace('%',''), 10) || 0)
+            : (Number.isFinite(item.rainpop) ? item.rainpop : 0),
+          visibility: String(item.vis ?? 'N/A'),
+          weatherCode: mapWeatherDescToCode(item.weather ?? ''),
+          weatherDesc: item.weather ?? '',
+          title: `${item.eta} 抵達時段`,
+        }));
+
+        console.log("API 航班資料：", schedules_api.value);
+        console.log("API 天氣資料：", weatherData_api.value);
+      } catch (err) {
+        console.error("載入 API 失敗：", err);
+      } finally {
+        fetching = false;
+      }
+    }
 
     let timeInterval;
     let carouselInterval;
@@ -1116,6 +1174,10 @@ export default {
     let backgroundInterval;
 
     onMounted(() => {
+      
+      fetchScheduleApi();
+      scheduleTimer = setInterval(fetchScheduleApi, 60_000);
+
       updateTime();
       // 改為每秒更新確保時間準確
       timeInterval = setInterval(updateTime, 1000);
@@ -1164,12 +1226,12 @@ export default {
       weatherCarouselInterval = setInterval(nextWeather, 5000);
 
       // 啟動船班輪播自動切換（只在超過2個船班時啟動，每8秒切換一次）
-      if (schedules.value.length > maxDisplaySchedules) {
+      if (schedules_api.value.length > maxDisplaySchedules) {
         scheduleCarouselInterval = setInterval(nextSchedulePage, 8000);
       }
       
       // 啟動行動版航班輪播自動切換（超過1個船班時啟動，每5秒切換一次）
-      if (schedules.value.length > 1) {
+      if (schedules_api.value.length > 1) {
         mobileScheduleCarouselInterval = setInterval(nextMobileSchedule, 5000);
       }
 
@@ -1183,6 +1245,7 @@ export default {
     });
 
     onUnmounted(() => {
+      if (scheduleTimer) clearInterval(scheduleTimer);
       if (timeInterval) {
         clearInterval(timeInterval);
       }
@@ -1213,9 +1276,11 @@ export default {
       currentTime,
       currentDate,
       currentWeekday,
+      schedules_api,
       schedules,
       alerts,
       currentAlertIndex,
+      weatherData_api,
       weatherData,
       currentWeatherIndex,
       isLowPerformanceDevice,
