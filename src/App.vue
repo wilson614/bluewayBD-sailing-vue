@@ -310,7 +310,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="weather-title flex items-center justify-center gap-2">
+                <div class="flex items-center justify-center gap-2">
                   <div class="carousel-indicators">
                     <div
                       v-for="page in getTotalAlertPages()"

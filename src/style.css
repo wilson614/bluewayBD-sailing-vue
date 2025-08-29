@@ -429,8 +429,24 @@ header img[alt="TIPC Logo"]:hover {
 /* 輪播容器 */
 .alert-carousel {
   position: relative;
+  display: flex;
+  min-height: 15vh;
   height: 80%;
+  width: 100%;
 }
+
+@media (max-width: 768px){
+  .alert-carousel {
+    min-height: 25vh;
+  }
+}
+
+@media (max-width: 480px){
+  .alert-carousel {
+    min-height: 30vh;
+  }
+}
+
 
 /* 大螢幕固定輪播高度 */
 @media (min-width: 1920px) {
