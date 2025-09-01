@@ -28,7 +28,7 @@
             class="h-8 sm:h-12 lg:h-16 w-auto"
           />
           <div class="flex">
-            <h1>布袋港</h1>
+            <h1>{{ origin }}港</h1>
           </div>
         </div>
         <h1 class="hidden text-center md:text-left md:inline-block">藍色公路航線資訊</h1>
@@ -50,7 +50,7 @@
             <!-- 船班標題 -->
             <div class="flex justify-between items-center mb-2 lg:mb-4 gap-2">
               <div class="flex items-center justify-between gap-4 w-full lg:w-auto">
-                <h3>航班資訊</h3>
+                <h3>{{ dayLabel }}航班資訊</h3>
                 <div class="text-gray-300 lg:text-2xl text-sm">資訊更新時間：{{ currentTime }}</div>
               </div>
               <!-- 桌面版分頁指示器 -->
@@ -93,7 +93,7 @@
               <h5>預定抵達</h5>
               <h5>航行舒適度</h5>
               <h5>開航狀態</h5>
-              <h5>馬公天氣</h5>
+              <h5>{{ destination }}天氣</h5>
               <h5>海象預報</h5>
             </div>
 
@@ -330,11 +330,17 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 
 export default {
   name: "App",
   setup() {
+    const port = "MK";
+    const origin = port === "MK" ? "馬公" : "布袋";
+    const destination = port === "MK" ? "布袋" : "馬公";
+    const date = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+    const isToday = ref(true)
+    const dayLabel = computed(() => (isToday.value ? '今日' : '明日'))
     const currentTime = ref("");
     const currentDate = ref("");
     const currentWeekday = ref("");
@@ -1122,11 +1128,40 @@ export default {
       fetching = true;
       try {
         const res = await fetch(
-          "https://training.ezoomcloud.com/api/shipscheduledata?port=MK&date=2025-08-29"
+          `https://localhost:44309/shipscheduledata?port=${port}&date=${date}`
         );
         const data = await res.json();
 
-        schedules_api.value = (data.items ?? []).map((item, i) => ({
+        const nowHHmm = new Date().toLocaleTimeString('en-GB', {
+          timeZone: 'Asia/Taipei',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        const toHHmm = (t) => {
+          const [h, m] = String(t ?? '').trim().split(':');
+          return `${String(parseInt(h, 10) || 0).padStart(2, '0')}:${String(parseInt(m, 10) || 0).padStart(2, '0')}`;
+        }
+
+        isToday.value = true;
+
+        let items = (data.items ?? []).filter(it => toHHmm(it.depart) >= nowHHmm);
+
+        if (items.length === 0) {
+          const tz = 'Asia/Taipei';
+          const tmr = new Date(`${date}T00:00:00+08:00`);
+          tmr.setDate(tmr.getDate() + 1);
+          const tomorrow = tmr.toLocaleDateString('en-CA', { timeZone: tz });
+
+          const res2 = await fetch(
+            `https://localhost:44309/shipscheduledata?port=${port}&date=${tomorrow}`
+          );
+          const data2 = await res2.json();
+          items = data2.items ?? []
+          isToday.value = false;
+        }
+
+        schedules_api.value = items.map((item, i) => ({
           id: i + 1,
           departure: item.depart,
           shipName: item.ship,
@@ -1144,7 +1179,7 @@ export default {
           return m[desc] ?? '02';
         };
 
-        weatherData_api.value = (data.items ?? []).map((item, i) => ({
+        weatherData_api.value = items.map((item, i) => ({
           id: i + 1,
           arrivalTime: item.eta,                              // 你原本用 arrivalTime 對齊
           temperature: String(item.temp ?? ''),               // 例如 '32'
@@ -1166,12 +1201,41 @@ export default {
       }
     }
 
+    function clearScheduleTimers() {
+      if (scheduleCarouselInterval) { clearInterval(scheduleCarouselInterval); scheduleCarouselInterval = null; }
+      if (mobileScheduleCarouselInterval) { clearInterval(mobileScheduleCarouselInterval); mobileScheduleCarouselInterval = null; }
+    }
+
+    function startScheduleTimers() {
+      clearScheduleTimers();
+
+      const len = schedules_api.value.length;
+
+      const totalPages = Math.max(1, Math.ceil(len / maxDisplaySchedules));
+      if (currentSchedulePage.value >= totalPages) currentSchedulePage.value = 0;
+      if (currentMobileScheduleIndex.value >= len) currentMobileScheduleIndex.value = 0;
+
+      if (len > maxDisplaySchedules) {
+        scheduleCarouselInterval = setInterval(nextSchedulePage, 8000);
+      }
+
+      if (len > 1) {
+        mobileScheduleCarouselInterval = setInterval(nextMobileSchedule, 5000);
+      }
+    }
+
     let timeInterval;
     let carouselInterval;
     let weatherCarouselInterval;
     let scheduleCarouselInterval;
     let mobileScheduleCarouselInterval;
     let backgroundInterval;
+    
+    watch(
+      () => schedules_api.value.length,
+      () => { startScheduleTimers(); },
+      { immediate: true }
+    )
 
     onMounted(() => {
       
@@ -1225,16 +1289,11 @@ export default {
       // 啟動天氣輪播自動切換（每 5 秒切換一次）
       weatherCarouselInterval = setInterval(nextWeather, 5000);
       
-      console.log("船班資料數量:", schedules_api.value.length, maxDisplaySchedules);
       // 啟動船班輪播自動切換（只在超過2個船班時啟動，每8秒切換一次）
-      if (schedules_api.value.length > maxDisplaySchedules) {
-        scheduleCarouselInterval = setInterval(nextSchedulePage, 8000);
-      }
+      //if (schedules_api.value.length > maxDisplaySchedules) scheduleCarouselInterval = setInterval(nextSchedulePage, 8000);
       
       // 啟動行動版航班輪播自動切換（超過1個船班時啟動，每5秒切換一次）
-      if (schedules_api.value.length > 1) {
-        mobileScheduleCarouselInterval = setInterval(nextMobileSchedule, 5000);
-      }
+      //if (schedules_api.value.length > 1) mobileScheduleCarouselInterval = setInterval(nextMobileSchedule, 5000);
 
       // 添加緊急狀態閃爍效果
       setInterval(() => {
@@ -1246,6 +1305,7 @@ export default {
     });
 
     onUnmounted(() => {
+      clearScheduleTimers();
       if (scheduleTimer) clearInterval(scheduleTimer);
       if (timeInterval) {
         clearInterval(timeInterval);
@@ -1307,6 +1367,10 @@ export default {
       getCurrentDisplayAlerts,
       getSevereAlerts,
       getNonSevereAlerts,
+      isToday,
+      dayLabel,
+      origin,
+      destination,
     };
   },
 };
