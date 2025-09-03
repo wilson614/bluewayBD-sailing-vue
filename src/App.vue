@@ -341,6 +341,8 @@ export default {
     const date = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
     const isToday = ref(true)
     const dayLabel = computed(() => (isToday.value ? '今日' : '明日'))
+    const schedules_api = ref([]);
+    const weatherData_api = ref([]);
     const currentTime = ref("");
     const currentDate = ref("");
     const currentWeekday = ref("");
@@ -354,60 +356,13 @@ export default {
       '/images/bg-2.jpg',
       '/images/bg-3.jpg'
     ]);
+
     const currentBackgroundIndex = ref(0);
 
-    const schedules_api = ref([]);
-    
-    const schedules = ref([
-      {
-        id: 1,
-        departure: "10:00",
-        shipName: "太吉之星一號",
-        pier: "B1",
-        arrival: "11:20",
-        windLevel: 7,
-        waveHeight: "1.8",
-        visibility: "1",
-        comfort: "劇烈搖晃",
-        status: "可能停航",
-      },
-      {
-        id: 2,
-        departure: "12:00",
-        shipName: "凱旋8號",
-        pier: "F2",
-        arrival: "13:00",
-        windLevel: 5,
-        waveHeight: "1.5",
-        visibility: "3",
-        comfort: "搖晃",
-        status: "正常開航",
-      },
-      {
-        id: 3,
-        departure: "14:00",
-        shipName: "藍鵲輪",
-        pier: "B1",
-        arrival: "15:00",
-        windLevel: 4,
-        waveHeight: "1",
-        visibility: "0.8~1",
-        comfort: "些微搖晃",
-        status: "正常開航",
-      },
-      {
-        id: 4,
-        departure: "16:00",
-        shipName: "布袋之星",
-        pier: "A1",
-        arrival: "17:20",
-        windLevel: 3,
-        waveHeight: "0.8",
-        visibility: "8",
-        comfort: "舒適",
-        status: "正常開航",
-      },
-    ]);
+    const nextBackground = () => {
+      currentBackgroundIndex.value = 
+        (currentBackgroundIndex.value + 1) % backgroundImages.value.length;
+    };
 
     // 貼心提醒輪播數據 (按等級排序: 嚴重 -> 中度 -> 普通)
     const alerts = ref([
@@ -499,52 +454,6 @@ export default {
       
       return result;
     };
-
-    const weatherData_api = ref([]);
-
-    // 馬公天氣資料（根據抵達時間）- 來源：中央氣象署澎湖縣預報
-    const weatherData = ref([
-      {
-        id: 1,
-        arrivalTime: "11:20",
-        temperature: "27",
-        rainChance: 75,
-        visibility: "2-4",
-        weatherCode: "08",
-        weatherDesc: "陣雨",
-        title: "11:20 抵達時段",
-      },
-      {
-        id: 2,
-        arrivalTime: "13:00",
-        temperature: "28",
-        rainChance: 80,
-        visibility: "1-5",
-        weatherCode: "15",
-        weatherDesc: "雷陣雨",
-        title: "13:00 抵達時段",
-      },
-      {
-        id: 3,
-        arrivalTime: "15:00",
-        temperature: "29",
-        rainChance: 65,
-        visibility: "3-6",
-        weatherCode: "04",
-        weatherDesc: "多雲",
-        title: "15:00 抵達時段",
-      },
-      {
-        id: 4,
-        arrivalTime: "17:20",
-        temperature: "26",
-        rainChance: 50,
-        visibility: "4-8",
-        weatherCode: "02",
-        weatherDesc: "晴時多雲",
-        title: "17:20 抵達時段",
-      },
-    ]);
 
     // 當前顯示的天氣索引
     const currentWeatherIndex = ref(0);
@@ -1000,12 +909,6 @@ export default {
       }
     };
 
-    // 背景圖片自動切換功能
-    const nextBackground = () => {
-      currentBackgroundIndex.value = 
-        (currentBackgroundIndex.value + 1) % backgroundImages.value.length;
-    };
-
     // 計算貼心提醒總頁數（基於非嚴重等級的輪播）
     const getTotalAlertPages = () => {
       const nonSevereAlerts = getNonSevereAlerts();
@@ -1240,7 +1143,7 @@ export default {
     onMounted(() => {
       
       fetchScheduleApi();
-      scheduleTimer = setInterval(fetchScheduleApi, 60_000);
+      scheduleTimer = setInterval(fetchScheduleApi, 60000);
 
       updateTime();
       // 改為每秒更新確保時間準確
@@ -1281,19 +1184,11 @@ export default {
         console.log("使用簡化船舶圖示以提升效能");
       }
 
-      // 註：響應式監聽器已在上方添加
-
       // 啟動輪播自動切換（每 4 秒切換一次）
       carouselInterval = setInterval(nextAlert, 4000);
 
       // 啟動天氣輪播自動切換（每 5 秒切換一次）
       weatherCarouselInterval = setInterval(nextWeather, 5000);
-      
-      // 啟動船班輪播自動切換（只在超過2個船班時啟動，每8秒切換一次）
-      //if (schedules_api.value.length > maxDisplaySchedules) scheduleCarouselInterval = setInterval(nextSchedulePage, 8000);
-      
-      // 啟動行動版航班輪播自動切換（超過1個船班時啟動，每5秒切換一次）
-      //if (schedules_api.value.length > 1) mobileScheduleCarouselInterval = setInterval(nextMobileSchedule, 5000);
 
       // 添加緊急狀態閃爍效果
       setInterval(() => {
@@ -1338,11 +1233,9 @@ export default {
       currentDate,
       currentWeekday,
       schedules_api,
-      schedules,
       alerts,
       currentAlertIndex,
       weatherData_api,
-      weatherData,
       currentWeatherIndex,
       isLowPerformanceDevice,
       shouldReduceEffects,
