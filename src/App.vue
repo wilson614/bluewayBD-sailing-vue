@@ -50,7 +50,7 @@
             <!-- 船班標題 -->
             <div class="flex justify-between items-center mb-2 lg:mb-4 gap-2">
               <div class="flex items-center justify-between gap-4 w-full lg:w-auto">
-                <h3>{{ dayLabel }}航班資訊</h3>
+                <h3>{{ dayLabel }}({{ currentDateMD }})航班資訊</h3>
                 <div class="text-gray-300 lg:text-2xl text-sm">資訊更新時間：{{ currentTime }}</div>
               </div>
               <!-- 桌面版分頁指示器 -->
@@ -93,7 +93,7 @@
               <h5>預定抵達</h5>
               <h5>航行舒適度</h5>
               <h5>開航狀態</h5>
-              <h5>{{ destination }}天氣</h5>
+              <h5>抵達{{ destination }}天氣</h5>
               <h5>海象預報</h5>
             </div>
 
@@ -232,7 +232,7 @@
                 
                 <div class="grid grid-cols-2 gap-4">
                   <div class="space-y-2">
-                    <p class="text-gray-300">馬公天氣</p>
+                    <p class="text-gray-300">抵達{{ destination }}天氣</p>
                     <div class="flex items-center gap-2">
                       <img 
                         :src="`/images/weather_icons/day/${getWeatherByTime(schedule.arrival).weatherCode}.svg`"
@@ -335,7 +335,7 @@ import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 export default {
   name: "App",
   setup() {
-    const port = "MK";
+    const port = "BD";
     const origin = port === "MK" ? "馬公" : "布袋";
     const destination = port === "MK" ? "布袋" : "馬公";
     const date = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
@@ -345,6 +345,7 @@ export default {
     const weatherData_api = ref([]);
     const currentTime = ref("");
     const currentDate = ref("");
+    const currentDateMD = ref("");
     const currentWeekday = ref("");
     const shipModelRef = ref(null);
     let shipScene = null;
@@ -427,9 +428,17 @@ export default {
       return alerts.value.filter(alert => alert.level === 'severe').slice(0, 2);
     };
 
+    const getNormalAlerts = () => {
+      return alerts.value.filter(alert => alert.level === 'normal').slice(0, 2);
+    }
+
     const getNonSevereAlerts = () => {
       return alerts.value.filter(alert => alert.level !== 'severe');
     };
+
+    const getNonNormalAlerts = () => {
+      return alerts.value.filter(alert => alert.level !== 'normal');
+    }
 
     // 獲取當前要顯示的提醒（統一輪播邏輯：嚴重等級固定，其他等級輪播）
     const getCurrentDisplayAlerts = () => {
@@ -1031,7 +1040,7 @@ export default {
       fetching = true;
       try {
         const res = await fetch(
-          `https://localhost:44309/shipscheduledata?port=${port}&date=${date}`
+          `${import.meta.env.VITE_API_BASE}/shipscheduledata?port=${port}&date=${date}`
         );
         const data = await res.json();
 
@@ -1047,6 +1056,9 @@ export default {
         }
 
         isToday.value = true;
+        const now = new Date();
+        const dateMD = now.toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit', timeZone: 'Asia/Taipei' });
+        currentDateMD.value = dateMD.replace(/\//g, '/');
 
         let items = (data.items ?? []).filter(it => toHHmm(it.depart) >= nowHHmm);
 
@@ -1057,11 +1069,13 @@ export default {
           const tomorrow = tmr.toLocaleDateString('en-CA', { timeZone: tz });
 
           const res2 = await fetch(
-            `https://localhost:44309/shipscheduledata?port=${port}&date=${tomorrow}`
+            `${import.meta.env.VITE_API_BASE}/shipscheduledata?port=${port}&date=${tomorrow}`
           );
           const data2 = await res2.json();
           items = data2.items ?? []
           isToday.value = false;
+          const dateMD = new Date(tomorrow).toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit', timeZone: tz });
+          currentDateMD.value = dateMD.replace(/\//g, '/');
         }
 
         schedules_api.value = items.map((item, i) => ({
@@ -1231,6 +1245,7 @@ export default {
     return {
       currentTime,
       currentDate,
+      currentDateMD,
       currentWeekday,
       schedules_api,
       alerts,
@@ -1259,7 +1274,9 @@ export default {
       getCurrentAlertPage,
       getCurrentDisplayAlerts,
       getSevereAlerts,
+      getNormalAlerts,
       getNonSevereAlerts,
+      getNonNormalAlerts,
       isToday,
       dayLabel,
       origin,
