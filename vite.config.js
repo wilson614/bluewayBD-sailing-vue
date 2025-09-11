@@ -13,5 +13,6 @@ export default defineConfig({
       }
     }
   },
-  assetsInclude: ['**/*.fbx', '**/*.glb']
+  assetsInclude: ['**/*.fbx', '**/*.glb'],
+  base: '/mkport/'
 })

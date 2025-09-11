@@ -3,19 +3,15 @@
   <system.webServer>
     <rewrite>
       <rules>
-        <!-- API 反向代理到後端 ASP.NET Core -->
-        <rule name="API Reverse Proxy" stopProcessing="true">
-          <match url="^api/(.*)" />
-          <action type="Rewrite" url="http://localhost:8080/{R:0}" logRewrittenUrl="true" />
+        <rule name="Proxy API" stopProcessing="true">
+          <match url="^shipscheduledata/(.*)" />
+          <action type="Rewrite" url="http://localhost:8080/shipscheduledata/{R:1}" />
         </rule>
-
-        <!-- SPA fallback：非檔案/資料夾且不是 /api，回 index.html -->
         <rule name="SPA Fallback" stopProcessing="true">
           <match url=".*" />
           <conditions logicalGrouping="MatchAll">
             <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
             <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
-            <add input="{REQUEST_URI}" pattern="^api/" negate="true" />
           </conditions>
           <action type="Rewrite" url="/index.html" />
         </rule>

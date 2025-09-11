@@ -335,7 +335,8 @@ import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 export default {
   name: "App",
   setup() {
-    const port = "BD";
+    const port = "MK";
+    const oriPort = port === "MK" ? "MK" : "BD";
     const origin = port === "MK" ? "馬公" : "布袋";
     const destination = port === "MK" ? "布袋" : "馬公";
     const date = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
@@ -370,40 +371,40 @@ export default {
       // 嚴重等級：管制相關
       {
         id: 1,
-        icon: "fas fa-wind fa-fw",
-        message: "風級7級已達管制標準",
+        icon: "fas fa-pills fa-fw",
+        message: "預計航程中風浪稍大，建議備妥暈船藥",
         level: "severe",
       },
       {
         id: 2,
-        icon: "fas fa-clock fa-fw",
-        message: "抵達時間受海氣象因素延遲",
+        icon: "fas fa-wind fa-fw",
+        message: "'可能停航' 請隨時注意現場廣播和看板",
         level: "severe",
       },
       // 中度等級
       {
         id: 3,
         icon: "fas fa-umbrella fa-fw",
-        message: "下雨機率80% 小心甲板濕滑",
+        message: "請備妥雨具，小心甲板濕滑",
         level: "moderate",
       },
       {
         id: 4,
-        icon: "fas fa-pills fa-fw",
-        message: "因風浪搖晃建議準備暈船藥",
+        icon: "fas fa-sun fa-fw",
+        message: "注意防曬，多補充水分",
         level: "moderate",
       },
       // 普通等級
       {
         id: 5,
         icon: "fas fa-life-ring fa-fw",
-        message: "請確實穿著救生衣保持安全",
+        message: "請確實穿著救生衣以策安全",
         level: "normal",
       },
       {
         id: 6,
-        icon: "fas fa-mobile-alt fa-fw",
-        message: "船上提供免費 WiFi 供旅客使用",
+        icon: "fas fa-ship fa-fw",
+        message: "目前浪高平穩，適合搭乘",
         level: "normal",
       },
     ]);
@@ -428,17 +429,9 @@ export default {
       return alerts.value.filter(alert => alert.level === 'severe').slice(0, 2);
     };
 
-    const getNormalAlerts = () => {
-      return alerts.value.filter(alert => alert.level === 'normal').slice(0, 2);
-    }
-
     const getNonSevereAlerts = () => {
       return alerts.value.filter(alert => alert.level !== 'severe');
     };
-
-    const getNonNormalAlerts = () => {
-      return alerts.value.filter(alert => alert.level !== 'normal');
-    }
 
     // 獲取當前要顯示的提醒（統一輪播邏輯：嚴重等級固定，其他等級輪播）
     const getCurrentDisplayAlerts = () => {
@@ -1040,7 +1033,7 @@ export default {
       fetching = true;
       try {
         const res = await fetch(
-          `${import.meta.env.VITE_API_BASE}/shipscheduledata?port=${port}&date=${date}`
+          `${import.meta.env.VITE_API_BASE}?port=${port}&date=${date}`
         );
         const data = await res.json();
 
@@ -1069,7 +1062,7 @@ export default {
           const tomorrow = tmr.toLocaleDateString('en-CA', { timeZone: tz });
 
           const res2 = await fetch(
-            `${import.meta.env.VITE_API_BASE}/shipscheduledata?port=${port}&date=${tomorrow}`
+            `${import.meta.env.VITE_API_BASE}?port=${port}&date=${tomorrow}`
           );
           const data2 = await res2.json();
           items = data2.items ?? []
@@ -1091,6 +1084,19 @@ export default {
           status: item.status,
         }));
 
+        const allConfortOk = schedules_api.value.every(s => s.comfort === '舒適');
+        if (allConfortOk) {
+          alerts.value = alerts.value.filter(a => a.id !== 1);
+        }
+        if (!allConfortOk) {
+          alerts.value = alerts.value.filter(a => a.id !== 6);
+        }
+
+        const allStatusOk = schedules_api.value.every(s => s.status === '正常開航');
+        if (allStatusOk) {
+          alerts.value = alerts.value.filter(a => a.id !== 2);
+        }
+
         const mapWeatherDescToCode = (desc) => {
           const m = { '晴':'01','晴時多雲':'02','多雲':'04','陰':'05','陣雨':'08','豪雨':'12','雷陣雨':'15' };
           return m[desc] ?? '02';
@@ -1098,8 +1104,8 @@ export default {
 
         weatherData_api.value = items.map((item, i) => ({
           id: i + 1,
-          arrivalTime: item.eta,                              // 你原本用 arrivalTime 對齊
-          temperature: String(item.temp ?? ''),               // 例如 '32'
+          arrivalTime: item.eta,
+          temperature: String(item.temp ?? ''),
           rainChance: typeof item.rainpop === 'string'
             ? (parseInt(item.rainpop.replace('%',''), 10) || 0)
             : (Number.isFinite(item.rainpop) ? item.rainpop : 0),
@@ -1109,8 +1115,44 @@ export default {
           title: `${item.eta} 抵達時段`,
         }));
 
+        const allRainLow = weatherData_api.value.every(w => w.rainChance < 80);
+        if (allRainLow) {
+          alerts.value = alerts.value.filter(a => a.id !== 3);
+        }
+
+        const allTempLow = weatherData_api.value.every(t => Number(t.temperature) < 36);
+        if (allTempLow) {
+          alerts.value = alerts.value.filter(a => a.id !== 4);
+        }
+
+        const resOrigin = await fetch(
+          `${import.meta.env.VITE_API_BASE}?port=${oriPort}&date=${date}`
+        );
+        const dataOrigin = await resOrigin.json();
+        const firstItem = dataOrigin.items?.[0];
+
+        const countAlerts = alerts.value.filter(i => [1, 2, 3, 4].includes(i.id)).length;
+        if (countAlerts > 2) {
+          alerts.value = alerts.value.filter(a => a.id !== 5);
+        }
+
+        const exists = alerts.value.some(a => a.id === 7);
+        if (!exists && countAlerts <= 1) {
+          // 新增 id=7
+          alerts.value.push({
+            id: 7,
+            icon: "fas fa-cloud-sun fa-fw",
+            message: `${origin}港目前天氣為${firstItem.weather}，溫度${firstItem.temp}度`,
+            level: "normal",
+          });
+        } else if (exists && countAlerts > 1) {
+          // 刪除 id=7
+          alerts.value = alerts.value.filter(a => a.id !== 7);
+        }
+
         console.log("API 航班資料：", schedules_api.value);
         console.log("API 天氣資料：", weatherData_api.value);
+        console.log("出發港口及天氣", oriPort, firstItem.weather, firstItem.temp);
       } catch (err) {
         console.error("載入 API 失敗：", err);
       } finally {
@@ -1141,8 +1183,23 @@ export default {
       }
     }
 
+    const handleAlertCarousel = () => {
+      if (alerts.value.length > 4) {
+        if (!carouselInterval) {
+          carouselInterval = setInterval(nextAlert, 4000);
+          console.log("🚀 啟動提醒輪播");
+        }
+      } else {
+        if (carouselInterval) {
+          clearInterval(carouselInterval);
+          carouselInterval = null;
+          console.log("🛑 停止提醒輪播");
+        }
+      }
+    };
+
     let timeInterval;
-    let carouselInterval;
+    let carouselInterval = null;
     let weatherCarouselInterval;
     let scheduleCarouselInterval;
     let mobileScheduleCarouselInterval;
@@ -1153,6 +1210,12 @@ export default {
       () => { startScheduleTimers(); },
       { immediate: true }
     )
+
+    watch(
+      () => alerts.value.length,
+      () => { handleAlertCarousel(); },
+      { immediate: true }
+    );
 
     onMounted(() => {
       
@@ -1198,9 +1261,6 @@ export default {
         console.log("使用簡化船舶圖示以提升效能");
       }
 
-      // 啟動輪播自動切換（每 4 秒切換一次）
-      carouselInterval = setInterval(nextAlert, 4000);
-
       // 啟動天氣輪播自動切換（每 5 秒切換一次）
       weatherCarouselInterval = setInterval(nextWeather, 5000);
 
@@ -1211,6 +1271,8 @@ export default {
           el.style.opacity = el.style.opacity === "0.7" ? "1" : "0.7";
         });
       }, 1000);
+
+      handleAlertCarousel();
     });
 
     onUnmounted(() => {
@@ -1274,9 +1336,7 @@ export default {
       getCurrentAlertPage,
       getCurrentDisplayAlerts,
       getSevereAlerts,
-      getNormalAlerts,
       getNonSevereAlerts,
-      getNonNormalAlerts,
       isToday,
       dayLabel,
       origin,
