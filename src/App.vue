@@ -163,7 +163,9 @@
                     }}</h5>
                     <p class="inline-block">%</p>
                   </div>
-                  <div class="col-span-2 text-center"><p>悶熱</p></div>
+                  <div class="col-span-2 text-center"><p>{{
+                      getWeatherByTime(schedule.arrival).weatherComfort
+                    }}</p></div>
                 </div>
                 <div class="grid grid-cols-3 gap-x-3 gap-y-1">
                   <div class="text-2xl text-right pe-2"><i class="fas fa-wind fa-fw"></i></div>
@@ -252,7 +254,9 @@
                       }}</h5>
                       <p>%</p>
                     </div>
-                    <p>悶熱</p></div>
+                    <p>{{
+                      getWeatherByTime(schedule.arrival).weatherComfort
+                    }}</p></div>
                   <div class="space-y-2">
                     <p class="text-gray-300">海象預報</p>
                     <div>
@@ -266,7 +270,7 @@
                          <p>m</p></div>
                       <div class="flex flex-row items-center gap-2">
                         <i class="fas fa-eye"></i>
-                         <h5>{{ schedule.waveHeight }}</h5>
+                         <h5>{{ schedule.visibility }}</h5>
                          <p>km</p>
                       </div>
                     </div>
@@ -1113,6 +1117,7 @@ export default {
           weatherCode: mapWeatherDescToCode(item.weather ?? ''),
           weatherDesc: item.weather ?? '',
           title: `${item.eta} 抵達時段`,
+          weatherComfort: item.weatherComfort ?? '舒適',
         }));
 
         const allRainLow = weatherData_api.value.every(w => w.rainChance < 80);
