@@ -340,7 +340,6 @@ export default {
   name: "App",
   setup() {
     const port = "MK";
-    const oriPort = port === "MK" ? "MK" : "BD";
     const origin = port === "MK" ? "馬公" : "布袋";
     const destination = port === "MK" ? "布袋" : "馬公";
     const date = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
@@ -1057,6 +1056,9 @@ export default {
         const dateMD = now.toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit', timeZone: 'Asia/Taipei' });
         currentDateMD.value = dateMD.replace(/\//g, '/');
 
+        let weatherNow = data.weatherNow;
+        let tempNow = data.tempNow;
+
         let items = (data.items ?? []).filter(it => toHHmm(it.depart) >= nowHHmm);
 
         if (items.length === 0) {
@@ -1130,12 +1132,6 @@ export default {
           alerts.value = alerts.value.filter(a => a.id !== 4);
         }
 
-        const resOrigin = await fetch(
-          `${import.meta.env.VITE_API_BASE}?port=${oriPort}&date=${date}`
-        );
-        const dataOrigin = await resOrigin.json();
-        const firstItem = dataOrigin.items?.[0];
-
         const countAlerts = alerts.value.filter(i => [1, 2, 3, 4].includes(i.id)).length;
         if (countAlerts > 2) {
           alerts.value = alerts.value.filter(a => a.id !== 5);
@@ -1147,7 +1143,7 @@ export default {
           alerts.value.push({
             id: 7,
             icon: "fas fa-cloud-sun fa-fw",
-            message: `${origin}港目前天氣為${firstItem.weather}，溫度${firstItem.temp}度`,
+            message: `${origin}港目前天氣為${weatherNow}，溫度${tempNow}度`,
             level: "normal",
           });
         } else if (exists && countAlerts > 1) {
@@ -1157,7 +1153,7 @@ export default {
 
         console.log("API 航班資料：", schedules_api.value);
         console.log("API 天氣資料：", weatherData_api.value);
-        console.log("出發港口及天氣", oriPort, firstItem.weather, firstItem.temp);
+        console.log("出發港口及天氣", port, weatherNow, tempNow);
       } catch (err) {
         console.error("載入 API 失敗：", err);
       } finally {
